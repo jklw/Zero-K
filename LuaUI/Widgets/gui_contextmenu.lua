@@ -1418,6 +1418,7 @@ local function printunitinfo(ud, buttonWidth, unitID)
 
 	local cost = numformat(ud.metalCost)
 	local health = numformat(ud.health)
+	local healthPerCost = numformat(ud.health / ud.cost)
 	local speed = numformat(ud.speed)
 	local mass = numformat(ud.mass)
 	
@@ -1479,6 +1480,9 @@ local function printunitinfo(ud, buttonWidth, unitID)
 	
 	statschildren[#statschildren+1] = Label:New{ caption = 'Health: ', textColor = color.stats_fg, }
 	statschildren[#statschildren+1] = Label:New{ caption = health, textColor = color.stats_fg, }
+
+	statschildren[#statschildren+1] = Label:New{ caption = 'Health/Cost: ', textColor = color.stats_fg, }
+	statschildren[#statschildren+1] = Label:New{ caption = healthPerCost, textColor = color.stats_fg, }
 
 	statschildren[#statschildren+1] = Label:New{ caption = 'Mass: ', textColor = color.stats_fg, }
 	statschildren[#statschildren+1] = Label:New{ caption = mass, textColor = color.stats_fg, }
