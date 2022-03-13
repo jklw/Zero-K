@@ -435,7 +435,7 @@ local function GetShieldRegenDrain(wd)
 	return shieldRegen, shieldDrain
 end
 
-local function weapons2Table(cells, ws, unitID)
+local function weapons2Table(cells, ws, unitID, unitCost)
 	local cells = cells
 	
 	local wd = WeaponDefs[ws.weaponID]
@@ -540,7 +540,21 @@ local function weapons2Table(cells, ws, unitID)
 
 		local mult = tonumber(cp.statsprojectiles) or ((tonumber(cp.script_burst) or wd.salvoSize) * wd.projectiles)
 
-		local dps_str, dam_str, shield_dam_str = '', '', ''
+		local costUnit = 1000
+		local perCostMult = mult * costUnit / unitCost
+
+		local dps_per_cost
+		if cp.stats_damage_per_second then
+			dps_per_cost = tonumber(cp.stats_damage_per_second) * costUnit / unitCost
+		else
+			dps_per_cost = perCostMult * dam / reloadtime
+		end
+		local dpsw_per_cost = perCostMult * damw / reloadtime;
+		local dpss_per_cost = perCostMult * dams / reloadtime;
+		local dpsd_per_cost = perCostMult * damd / reloadtime;
+		local dpsc_per_cost = perCostMult * damc / reloadtime;
+
+		local dps_str, dam_str, shield_dam_str, dps_per_cost_str = '', '', '', ''
 		local damageTypes = 0
 		if dps > 0 then
 			dam_str = dam_str .. numformat(dam,2)
@@ -550,6 +564,7 @@ local function weapons2Table(cells, ws, unitID)
 			else
 				dps_str = dps_str .. numformat(dps*mult,2)
 			end
+			dps_per_cost_str = dps_per_cost_str .. numformat(dps_per_cost, 2)
 			damageTypes = damageTypes + 1
 		end
 		if dpsw > 0 then
@@ -557,10 +572,12 @@ local function weapons2Table(cells, ws, unitID)
 				dps_str = dps_str .. ' + '
 				dam_str = dam_str .. ' + '
 				shield_dam_str = shield_dam_str .. ' + '
+				dps_per_cost_str = dps_per_cost_str .. ' + '
 			end
 			dam_str = dam_str .. color2incolor(colorCyan) .. numformat(damw,2) .. " (P)\008"
 			shield_dam_str = shield_dam_str .. color2incolor(colorCyan) .. numformat(math.floor(damw / 3),2) .. " (P)\008"
 			dps_str = dps_str .. color2incolor(colorCyan) .. numformat(dpsw*mult,2) .. " (P)\008"
+			dps_per_cost_str = dps_per_cost_str .. color2incolor(colorCyan) .. numformat(dpsw_per_cost,2) .. " (P)\008"
 			damageTypes = damageTypes + 1
 		end
 		if dpss > 0 then
@@ -568,10 +585,12 @@ local function weapons2Table(cells, ws, unitID)
 				dps_str = dps_str .. ' + '
 				dam_str = dam_str .. ' + '
 				shield_dam_str = shield_dam_str .. ' + '
+				dps_per_cost_str = dps_per_cost_str .. ' + '
 			end
 			dam_str = dam_str .. color2incolor(colorPurple) .. numformat(dams,2) .. " (S)\008"
 			shield_dam_str = shield_dam_str .. color2incolor(colorPurple) .. numformat(math.floor(dams / 3),2) .. " (S)\008"
 			dps_str = dps_str .. color2incolor(colorPurple) .. numformat(dpss*mult,2) .. " (S)\008"
+			dps_per_cost_str = dps_per_cost_str .. color2incolor(colorPurple) .. numformat(dpss_per_cost,2) .. " (S)\008"
 			damageTypes = damageTypes + 1
 		end
 
@@ -580,10 +599,12 @@ local function weapons2Table(cells, ws, unitID)
 				dps_str = dps_str .. ' + '
 				dam_str = dam_str .. ' + '
 				shield_dam_str = shield_dam_str .. ' + '
+				dps_per_cost_str = dps_per_cost_str .. ' + '
 			end
 			dam_str = dam_str .. color2incolor(colorDisarm) .. numformat(damd,2) .. " (D)\008"
 			shield_dam_str = shield_dam_str .. color2incolor(colorDisarm) .. numformat(math.floor(damd / 3),2) .. " (D)\008"
 			dps_str = dps_str .. color2incolor(colorDisarm) .. numformat(dpsd*mult,2) .. " (D)\008"
+			dps_per_cost_str = dps_per_cost_str .. color2incolor(colorDisarm) .. numformat(dpsd_per_cost,2) .. " (D)\008"
 			damageTypes = damageTypes + 1
 		end
 
@@ -592,10 +613,12 @@ local function weapons2Table(cells, ws, unitID)
 				dps_str = dps_str .. ' + '
 				dam_str = dam_str .. ' + '
 				shield_dam_str = shield_dam_str .. ' + '
+				dps_per_cost_str = dps_per_cost_str .. ' + '
 			end
 			dam_str = dam_str .. color2incolor(colorCapture) .. numformat(damc,2) .. " (C)\008"
 			shield_dam_str = shield_dam_str .. color2incolor(colorCapture) .. numformat(damc,2) .. " (C)\008"
 			dps_str = dps_str .. color2incolor(colorCapture) .. numformat(dpsc*mult,2) .. " (C)\008"
+			dps_per_cost_str = dps_per_cost_str .. color2incolor(colorCapture) .. numformat(dpsc_per_cost,2) .. " (C)\008"
 			damageTypes = damageTypes + 1
 		end
 
@@ -626,7 +649,9 @@ local function weapons2Table(cells, ws, unitID)
 		
 		if cp.damage_vs_shield and cp.spawns_name then -- Badger
 			dam_str = tostring(cp.damage_vs_shield) .. " (" .. dam .. " + " .. (tonumber(cp.damage_vs_shield)-dam) .. " mine)"
-			dps_str = numformat(math.floor(tonumber(cp.damage_vs_shield)/reloadtime))
+			local badger_dps = tonumber(cp.damage_vs_shield)/reloadtime
+			dps_str = numformat(math.floor(badger_dps))
+			dps_per_cost_str = numformat(badger_dps * costUnit / unitCost)
 		end
 
 		if show_damage then
@@ -659,6 +684,8 @@ local function weapons2Table(cells, ws, unitID)
 		if show_dps then
 			cells[#cells+1] = ' - DPS:'
 			cells[#cells+1] = dps_str
+			cells[#cells+1] = ' - DPS/Cost:'
+			cells[#cells+1] = dps_per_cost_str .. " per " .. costUnit .. " metal"
 		end
 
 		if (wd.interceptedByShieldType == 0) then
@@ -887,7 +914,7 @@ local function weapons2Table(cells, ws, unitID)
 	return cells
 end
 
-local function printAbilities(ud, unitID)
+local function printAbilities(ud, unitID, unitCost)
 	local cells = {}
 
 	local cp = ud.customParams
@@ -899,6 +926,8 @@ local function printAbilities(ud, unitID)
 		cells[#cells+1] = ''
 		cells[#cells+1] = ' - Buildpower: '
 		cells[#cells+1] = numformat(buildSpeed)
+		cells[#cells+1] = ' - Buildpower/Cost: '
+		cells[#cells+1] = numformat(buildSpeed * 1000 / unitCost) .. " per 1000 metal"
 		if ud.canResurrect then
 			cells[#cells+1] = ' - Can resurrect wreckage'
 			cells[#cells+1] = ''
@@ -1236,7 +1265,7 @@ local function printAbilities(ud, unitID)
 	return cells
 end
 
-local function printWeapons(unitDef, unitID)
+local function printWeapons(unitDef, unitID, unitCost)
 	local weaponStats = {}
 
 	local wd = WeaponDefs
@@ -1302,7 +1331,7 @@ local function printWeapons(unitDef, unitID)
 			cells[#cells+1] = ''
 			cells[#cells+1] = ''
 		end
-		cells = weapons2Table(cells, ws, unitID)
+		cells = weapons2Table(cells, ws, unitID, unitCost)
 		--end
 	end
 	
@@ -1418,7 +1447,7 @@ local function printunitinfo(ud, buttonWidth, unitID)
 
 	local cost = numformat(ud.metalCost)
 	local health = numformat(ud.health)
-	local healthPerCost = numformat(ud.health / ud.cost)
+	local healthPerCost = numformat(ud.health / ud.cost) .. " per metal"
 	local speed = numformat(ud.speed)
 	local mass = numformat(ud.mass)
 	
@@ -1598,8 +1627,8 @@ local function printunitinfo(ud, buttonWidth, unitID)
 		end
 	end
 
-	local cells = printAbilities(ud, isCommander and unitID)
-	
+	local cells = printAbilities(ud, isCommander and unitID, cost)
+
 	if cells and #cells > 0 then
 
 		statschildren[#statschildren+1] = Label:New{ caption = '', textColor = color.stats_header,}
@@ -1612,8 +1641,8 @@ local function printunitinfo(ud, buttonWidth, unitID)
 		end
 	end
 
-	cells = printWeapons(ud, isCommander and unitID)
-	
+	cells = printWeapons(ud, isCommander and unitID, cost)
+
 	if cells and #cells > 0 then
 		
 		statschildren[#statschildren+1] = Label:New{ caption = '', textColor = color.stats_header,}
