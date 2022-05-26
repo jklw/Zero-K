@@ -17,6 +17,7 @@ Window = Control:Inherit{
 	defaultHeight = 300,
 }
 
+---@class Window : Control
 local this = Window
 local inherited = this.inherited
 
@@ -40,6 +41,7 @@ end
 --]]
 --// =============================================================================
 
+---@return Window
 function Window:New(obj)
 	if obj.noFont == nil and obj.caption then
 		obj.noFont = false

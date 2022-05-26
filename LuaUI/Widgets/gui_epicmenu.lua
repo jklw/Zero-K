@@ -199,6 +199,11 @@ end
 
 --------------------------------------------------------------------------------
 -- Luaui config settings
+
+---@alias Action string
+---@alias Keybind string
+
+---@type {[1]:Action, [2]:Keybind}
 local keybounditems = {}
 local keybind_date = 0
 
@@ -365,6 +370,11 @@ local function IntToBool(int)
 end
 
 -- cool new framework for ordered table that has keys
+
+---@generic TKey, TValue
+---@param t {[1]:TKey,[2]:TValue}[]
+---@param key TKey
+---@return TValue|nil
 local function otget(t, key)
 	for i = 1, #t do
 		if not t[i] then
@@ -376,6 +386,11 @@ local function otget(t, key)
 	end
 	return nil
 end
+
+---@generic TKey, TValue
+---@param t {[1]:TKey,[2]:TValue}[]
+---@param key TKey
+---@param val TValue
 local function otset(t, key, val)
 	for i = 1, #t do
 		if t[i][1] == key then --key stored in index 1, while value at index 2
@@ -802,6 +817,7 @@ end
 local function MakeSubWindow(key)
 end
 
+---@param mod string
 local function GetReadableHotkeyMod(mod)
 	local modlowercase = mod:lower()
 	return (modlowercase:find('a%+') and 'Alt+' or '') ..

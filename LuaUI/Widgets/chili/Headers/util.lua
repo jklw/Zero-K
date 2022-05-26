@@ -350,10 +350,15 @@ function table:arrayappend(t)
 	end
 end
 
+---@generic T1, T2
+---@param self T1[]
+---@param fun fun(T1):T2
 function table:arraymap(fun)
+	local newTable = {}
 	for i = 1, #self do
 		newTable[i] = fun(self[i])
 	end
+	return newTable
 end
 
 function table:fold(fun, state)
