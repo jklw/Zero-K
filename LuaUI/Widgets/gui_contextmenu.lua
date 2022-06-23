@@ -342,6 +342,8 @@ function comma_value(amount, displayPlusMinus)
 				else formatted = strFormat("%d", amount) end
 			end
 		end
+	elseif amount == nil then
+		formatted = "nil"
 	else
 		formatted = amount .. ""
 	end
@@ -435,7 +437,7 @@ local function GetShieldRegenDrain(wd)
 	return shieldRegen, shieldDrain
 end
 
-local function weapons2Table(cells, ws, unitID, unitCost)
+local function weapons2Table(cells, ws, unitDef, unitID, unitCost)
 	local cells = cells
 	
 	local wd = WeaponDefs[ws.weaponID]
@@ -532,29 +534,36 @@ local function weapons2Table(cells, ws, unitID, unitCost)
 		-- get reloadtime and calculate dps
 		local reloadtime = tonumber(cp.script_reload) or wd.reload
 		
-		local dps  = math.floor(dam /reloadtime + 0.5)
-		local dpsw = math.floor(damw/reloadtime + 0.5)
-		local dpss = math.floor(dams/reloadtime + 0.5)
-		local dpsd = math.floor(damd/reloadtime + 0.5)
-		local dpsc = math.floor(damc/reloadtime + 0.5)
+		local dps  = dam /reloadtime
+		local dpsw = damw/reloadtime
+		local dpss = dams/reloadtime
+		local dpsd = damd/reloadtime
+		local dpsc = damc/reloadtime
 
 		local mult = tonumber(cp.statsprojectiles) or ((tonumber(cp.script_burst) or wd.salvoSize) * wd.projectiles)
 
 		local costUnit = 1000
-		local perCostMult = mult * costUnit / unitCost
+		local dpsPerCostMult = mult * costUnit / unitCost / reloadtime;
+		local strengthMult = unitDef.health / unitCost
 
 		local dps_per_cost
 		if cp.stats_damage_per_second then
 			dps_per_cost = tonumber(cp.stats_damage_per_second) * costUnit / unitCost
 		else
-			dps_per_cost = perCostMult * dam / reloadtime
+			dps_per_cost = dpsPerCostMult * dam
 		end
-		local dpsw_per_cost = perCostMult * damw / reloadtime;
-		local dpss_per_cost = perCostMult * dams / reloadtime;
-		local dpsd_per_cost = perCostMult * damd / reloadtime;
-		local dpsc_per_cost = perCostMult * damc / reloadtime;
+		local dpsw_per_cost = dpsPerCostMult * damw
+		local dpss_per_cost = dpsPerCostMult * dams
+		local dpsd_per_cost = dpsPerCostMult * damd
+		local dpsc_per_cost = dpsPerCostMult * damc
 
-		local dps_str, dam_str, shield_dam_str, dps_per_cost_str = '', '', '', ''
+		local strength = strengthMult * dps_per_cost
+		local strengthw = strengthMult * dpsw_per_cost
+		local strengths = strengthMult * dpss_per_cost
+		local strengthd = strengthMult * dpsd_per_cost
+		local strengthc = strengthMult * dpsc_per_cost
+
+		local dps_str, dam_str, shield_dam_str, dps_per_cost_str, strength_str = '', '', '', '', ''
 		local damageTypes = 0
 		if dps > 0 then
 			dam_str = dam_str .. numformat(dam,2)
@@ -564,7 +573,8 @@ local function weapons2Table(cells, ws, unitID, unitCost)
 			else
 				dps_str = dps_str .. numformat(dps*mult,2)
 			end
-			dps_per_cost_str = dps_per_cost_str .. numformat(dps_per_cost, 2)
+			dps_per_cost_str = dps_per_cost_str .. numformat(dps_per_cost)
+			strength_str = strength_str .. numformat(strength)
 			damageTypes = damageTypes + 1
 		end
 		if dpsw > 0 then
@@ -573,11 +583,13 @@ local function weapons2Table(cells, ws, unitID, unitCost)
 				dam_str = dam_str .. ' + '
 				shield_dam_str = shield_dam_str .. ' + '
 				dps_per_cost_str = dps_per_cost_str .. ' + '
+				strength_str = strength_str .. ' + '
 			end
 			dam_str = dam_str .. color2incolor(colorCyan) .. numformat(damw,2) .. " (P)\008"
 			shield_dam_str = shield_dam_str .. color2incolor(colorCyan) .. numformat(math.floor(damw / 3),2) .. " (P)\008"
 			dps_str = dps_str .. color2incolor(colorCyan) .. numformat(dpsw*mult,2) .. " (P)\008"
 			dps_per_cost_str = dps_per_cost_str .. color2incolor(colorCyan) .. numformat(dpsw_per_cost,2) .. " (P)\008"
+			strength_str = strength_str .. color2incolor(colorCyan) .. numformat(strengthw) .. " (P)\008"
 			damageTypes = damageTypes + 1
 		end
 		if dpss > 0 then
@@ -586,11 +598,13 @@ local function weapons2Table(cells, ws, unitID, unitCost)
 				dam_str = dam_str .. ' + '
 				shield_dam_str = shield_dam_str .. ' + '
 				dps_per_cost_str = dps_per_cost_str .. ' + '
+				strength_str = strength_str .. ' + '
 			end
 			dam_str = dam_str .. color2incolor(colorPurple) .. numformat(dams,2) .. " (S)\008"
 			shield_dam_str = shield_dam_str .. color2incolor(colorPurple) .. numformat(math.floor(dams / 3),2) .. " (S)\008"
 			dps_str = dps_str .. color2incolor(colorPurple) .. numformat(dpss*mult,2) .. " (S)\008"
 			dps_per_cost_str = dps_per_cost_str .. color2incolor(colorPurple) .. numformat(dpss_per_cost,2) .. " (S)\008"
+			strength_str = strength_str .. color2incolor(colorPurple) .. numformat(strengths) .. " (S)\008"
 			damageTypes = damageTypes + 1
 		end
 
@@ -600,11 +614,13 @@ local function weapons2Table(cells, ws, unitID, unitCost)
 				dam_str = dam_str .. ' + '
 				shield_dam_str = shield_dam_str .. ' + '
 				dps_per_cost_str = dps_per_cost_str .. ' + '
+				strength_str = strength_str .. ' + '
 			end
 			dam_str = dam_str .. color2incolor(colorDisarm) .. numformat(damd,2) .. " (D)\008"
 			shield_dam_str = shield_dam_str .. color2incolor(colorDisarm) .. numformat(math.floor(damd / 3),2) .. " (D)\008"
 			dps_str = dps_str .. color2incolor(colorDisarm) .. numformat(dpsd*mult,2) .. " (D)\008"
 			dps_per_cost_str = dps_per_cost_str .. color2incolor(colorDisarm) .. numformat(dpsd_per_cost,2) .. " (D)\008"
+			strength_str = strength_str .. color2incolor(colorDisarm) .. numformat(strengthd) .. " (D)\008"
 			damageTypes = damageTypes + 1
 		end
 
@@ -614,11 +630,13 @@ local function weapons2Table(cells, ws, unitID, unitCost)
 				dam_str = dam_str .. ' + '
 				shield_dam_str = shield_dam_str .. ' + '
 				dps_per_cost_str = dps_per_cost_str .. ' + '
+				strength_str = strength_str .. ' + '
 			end
 			dam_str = dam_str .. color2incolor(colorCapture) .. numformat(damc,2) .. " (C)\008"
 			shield_dam_str = shield_dam_str .. color2incolor(colorCapture) .. numformat(damc,2) .. " (C)\008"
 			dps_str = dps_str .. color2incolor(colorCapture) .. numformat(dpsc*mult,2) .. " (C)\008"
 			dps_per_cost_str = dps_per_cost_str .. color2incolor(colorCapture) .. numformat(dpsc_per_cost,2) .. " (C)\008"
+			strength_str = strength_str .. color2incolor(colorCapture) .. numformat(strengthc) .. " (C)\008"
 			damageTypes = damageTypes + 1
 		end
 
@@ -686,6 +704,8 @@ local function weapons2Table(cells, ws, unitID, unitCost)
 			cells[#cells+1] = dps_str
 			cells[#cells+1] = ' - DPS/Cost:'
 			cells[#cells+1] = dps_per_cost_str .. " per " .. costUnit .. " metal"
+			cells[#cells+1] = ' - Strength:'
+			cells[#cells+1] = strength_str .. " DPS*HP per " .. costUnit .. " metal^2"
 		end
 
 		if (wd.interceptedByShieldType == 0) then
@@ -1331,7 +1351,7 @@ local function printWeapons(unitDef, unitID, unitCost)
 			cells[#cells+1] = ''
 			cells[#cells+1] = ''
 		end
-		cells = weapons2Table(cells, ws, unitID, unitCost)
+		cells = weapons2Table(cells, ws, unitDef, unitID, unitCost)
 		--end
 	end
 	
@@ -1445,9 +1465,8 @@ local function printunitinfo(ud, buttonWidth, unitID)
 
 	local isCommander = (unitID and Spring.GetUnitRulesParam(unitID, "comm_level"))
 
-	local cost = numformat(ud.metalCost)
+	local cost = ud.metalCost
 	local health = numformat(ud.health)
-	local healthPerCost = numformat(ud.health / ud.cost) .. " per metal"
 	local speed = numformat(ud.speed)
 	local mass = numformat(ud.mass)
 	
@@ -1496,7 +1515,9 @@ local function printunitinfo(ud, buttonWidth, unitID)
 		statschildren[#statschildren+1] = Label:New{ caption = '', textColor = color.stats_header,}
 	end
 
-	local costStr = cost .. " M"
+	local healthPerCost = ud.health / cost
+
+	local costStr = numformat(cost) .. " M"
 	if (legacyCommCost) then
 		costStr = costStr .. "(" .. legacyCommCost .. " M)"
 	end
@@ -1511,7 +1532,7 @@ local function printunitinfo(ud, buttonWidth, unitID)
 	statschildren[#statschildren+1] = Label:New{ caption = health, textColor = color.stats_fg, }
 
 	statschildren[#statschildren+1] = Label:New{ caption = 'Health/Cost: ', textColor = color.stats_fg, }
-	statschildren[#statschildren+1] = Label:New{ caption = healthPerCost, textColor = color.stats_fg, }
+	statschildren[#statschildren+1] = Label:New{ caption = numformat(healthPerCost) .. " per metal", textColor = color.stats_fg, }
 
 	statschildren[#statschildren+1] = Label:New{ caption = 'Mass: ', textColor = color.stats_fg, }
 	statschildren[#statschildren+1] = Label:New{ caption = mass, textColor = color.stats_fg, }
