@@ -22,6 +22,7 @@ local ORDER_VERSION = 8 --- change this to reset enabled/disabled widgets
 local DATA_VERSION = 9 -- change this to reset widget settings
 
 local PROFILE_INIT = false
+local MEMORY_DEBUG = false
 
 local vfs = VFS
 local vfsInclude = vfs.Include
@@ -35,7 +36,7 @@ vfsInclude("LuaRules/Utilities/tablefunctions.lua"   , nil, vfsGame)
 vfsInclude("LuaRules/Utilities/debugFunctions.lua"   , nil, vfsGame)
 vfsInclude("LuaRules/Utilities/versionCompare.lua"   , nil, vfsGame)
 vfsInclude("LuaRules/Utilities/unitStates.lua"       , nil, vfsGame)
-vfsInclude("LuaRules/Utilities/teamFunctions.lua"    , nil, vfsGame)
+vfsInclude("LuaRules/Utilities/gametype.lua"         , nil, vfsGame)
 vfsInclude("LuaRules/Utilities/vector.lua"           , nil, vfsGame)
 vfsInclude("LuaRules/Utilities/unitTypeChecker.lua"  , nil, vfsGame)
 vfsInclude("LuaRules/Utilities/function_override.lua", nil, vfsGame)
@@ -591,6 +592,13 @@ for i = 1, #restrictedFunctions do
 end
 
 function widgetHandler:LoadWidget(filename, _VFSMODE)
+	local kbytes = 0
+	if MEMORY_DEBUG then
+		collectgarbage("collect") -- call it twice, mark
+		collectgarbage("collect") -- sweep
+		kbytes = gcinfo() 
+	end
+
 	_VFSMODE = _VFSMODE or VFSMODE
 	local basename = Basename(filename)
 
@@ -705,6 +713,11 @@ function widgetHandler:LoadWidget(filename, _VFSMODE)
 		widget:SetConfigData(config)
 	end
 
+	if kbytes > 0 then 
+		collectgarbage("collect") -- mark
+		collectgarbage("collect") -- sweep
+		Spring.Echo("LoadWidget\t" .. filename .. "\t" .. (gcinfo() - kbytes) .. "\t" .. gcinfo())
+	end
 	return widget
 end
 
@@ -878,12 +891,11 @@ local function SafeWrapFuncGL(func, funcName)
 	return function(w, ...)
 
 		glPushAttrib(GL.ALL_ATTRIB_BITS)
-		local r = { pcall(func, w, ...) }
+		local r1, r2, r3 = pcall(func, w, ...)
 		glPopAttrib()
 
-		if (r[1]) then
-			table.remove(r, 1)
-			return unpack(r)
+		if r1 then
+			return r2, r3
 		else
 			if (funcName ~= 'Shutdown') then
 				widgetHandler:RemoveWidget(w)

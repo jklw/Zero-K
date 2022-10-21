@@ -21,7 +21,7 @@ return { hoverarty = {
     bait_level_default = 1,
     modelradius    = [[32]],
     dontfireatradarcommand = '0',
-    aimposoffset   = [[0 15 0]],
+    aimposoffset   = [[0 11 0]],
     turnatfullspeed_hover = [[1]],
   },
 
@@ -33,7 +33,7 @@ return { hoverarty = {
   losEmitHeight       = 40,
   maxDamage           = 1000,
   maxSlope            = 18,
-  maxVelocity         = 1.7,
+  maxVelocity         = 1.65,
   maxWaterDepth       = 22,
   movementClass       = [[HOVER4]],
   moveState           = 0,

@@ -1362,7 +1362,9 @@ local behaviourConfig = {
 	-- med range skirms
 	{
 		name = "cloakskirm",
-		skirms = Union(medRangeSkirmieeArray, NameToDefID({"turretriot"})),
+
+		-- LLT isn't outranged, but is on the list for the reload step-back
+		skirms = Union(medRangeSkirmieeArray, NameToDefID({"turretriot", "turretlaser"})),
 		swarms = medRangeSwarmieeArray,
 		--flees = {},
 		avoidHeightDiff = explodableFull,
@@ -1696,6 +1698,17 @@ local behaviourConfig = {
 		maxSwarmLeeway = 10,
 		minSwarmLeeway = 130,
 		skirmLeeway = 20,
+		
+		wardFireCmdID = CMD_FIRE_TOWARDS_ENEMY,
+		wardFireEverything = true,
+		wardFireUnboundedRange = true,
+		wardFireLeewayOverride = 80,
+		wardFireEnableLeeway = 10,
+		wardFirePredict = 5,
+		wardFireLeeway = 15,
+		wardFireShield = false,
+		wardFireDefault = false, -- Let people choose this.
+		wardAlternateStateToggle = true,
 	},
 	{
 		name = "shieldarty",
