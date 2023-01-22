@@ -69,6 +69,7 @@ local landBoxSize = 60
 local jumps = {}
 local jumping = {}
 local goalSet = {}
+local jumpReloadMod = {}
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -222,7 +223,7 @@ local function Jump(unitID, goal, origCmdParams, mustJump)
 	local delay            = jumpDef.delay
 	local height           = jumpDef.height
 	local cannotJumpMidair = jumpDef.cannotJumpMidair
-	local reloadTime       = (jumpDef.reload or 0)*30
+	local reloadTime       = ((jumpDef.reload or 0) + (jumpReloadMod[unitID] or 0)) * 30
 	local teamID           = spGetUnitTeam(unitID)
 	
 	if (not mustJump) and ((cannotJumpMidair and abs(startHeight - start[2]) > 1) or (start[2] < -UnitDefs[unitDefID].maxWaterDepth)) then
@@ -245,8 +246,9 @@ local function Jump(unitID, goal, origCmdParams, mustJump)
 	local flightDist = GetDist3(start, vertex) + GetDist3(vertex, goal)
 	
 	local speed = defSpeed * lineDist/flightDist
-	local step = speed/lineDist
-	local duration = math.ceil(1/step)+1
+	local stepRaw = speed/lineDist
+	local duration = math.ceil(1/stepRaw)
+	local step = 1/duration
 
 	if not mustJump then
 		-- check if there is no wall in between
@@ -336,10 +338,12 @@ local function Jump(unitID, goal, origCmdParams, mustJump)
 		
 		local lastX, lastY, lastZ = start[1], start[2], start[3]
 		local i = 0
-		while i <= 1 do
+		while i < 1 do
 			if (not Spring.ValidUnitID(unitID) or Spring.GetUnitIsDead(unitID)) then
 				return
 			end
+
+			i = i + step
 
 			local x = start[1] + vector[1]*i
 			local y = start[2] + vector[2]*i + (1-(2*i-1)^2)*height -- parabola
@@ -372,8 +376,9 @@ local function Jump(unitID, goal, origCmdParams, mustJump)
 				break
 			end
 			
-			Sleep()
-			i = i + step
+			if i < 1 then
+				Sleep()
+			end
 		end
 
 		CallAsUnitIfExists(unitID,env.endJump)
@@ -413,6 +418,11 @@ local function Jump(unitID, goal, origCmdParams, mustJump)
 		
 		if Spring.ValidUnitID(unitID) and (not Spring.GetUnitIsDead(unitID)) then
 			Spring.SetUnitVelocity(unitID, 0, 0, 0) -- prevent the impulse capacitor
+		end
+
+		if reloadTime <= 1 then
+			spSetUnitRulesParam(unitID, "jumpReload", 1)
+			return
 		end
 
 		local reloadSpeed = 1/reloadTime
@@ -473,18 +483,12 @@ function gadget:UnitCreated(unitID, unitDefID, unitTeam)
 	spInsertUnitCmdDesc(unitID, jumpCmdDesc)
 end
 
--- Makes wrecks continue inertially instead of falling straight down
-function gadget:UnitDamaged(unitID)
-	local jump_dir = jumping[unitID]
-	if (Spring.GetUnitHealth(unitID) < 0) and jump_dir then
-		mcDisable(unitID)
-		jumping[unitID] = nil
-	end
-end
-
 function gadget:UnitDestroyed(oldUnitID, unitDefID)
 	if jumping[oldUnitID] then
 		jumping[oldUnitID] = nil -- empty old unit's data
+	end
+	if jumpReloadMod[unitID] then
+		jumpReloadMod[unitID] = nil
 	end
 end
 
@@ -637,6 +641,13 @@ function gadget:GameFrame(currFrame)
 			jumps[coords] = nil
 		end
 	end
+end
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+function GG.SetJumpReloadMod(unitID, value)
+	jumpReloadMod[unitID] = value
 end
 
 --------------------------------------------------------------------------------

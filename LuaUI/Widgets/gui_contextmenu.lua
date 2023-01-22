@@ -325,16 +325,16 @@ end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
-function comma_value(amount, displayPlusMinus)
+function comma_value(amount, displayPlusMinus, forceDecimal)
 	local formatted
 
 	-- amount is a string when ToSI is used before calling this function
 	if amount and type(amount) == "number" then
-		if (amount ==0) then formatted = "0" else
+		if (amount == 0) then formatted = "0" else
 			if (amount < 2 and (amount * 100)%100 ~=0) then
 				if displayPlusMinus then formatted = strFormat("%+.2f", amount)
 				else formatted = strFormat("%.2f", amount) end
-			elseif (amount < 20 and (amount * 10)%10 ~=0) then
+			elseif (amount < 20 and (amount * 10)%10 ~=0) or forceDecimal then
 				if displayPlusMinus then formatted = strFormat("%+.1f", amount)
 				else formatted = strFormat("%.1f", amount) end
 			else
@@ -351,10 +351,8 @@ function comma_value(amount, displayPlusMinus)
 	return formatted
 end
 
-
-
-local function numformat(num)
-	return options.shortNotation.value and ToSIPrec(num) or comma_value(num)
+local function numformat(num, forceDecimal)
+	return options.shortNotation.value and ToSIPrec(num) or comma_value(num, false, forceDecimal)
 end
 
 local function AdjustWindow(window)
@@ -566,12 +564,12 @@ local function weapons2Table(cells, ws, unitDef, unitID, unitCost)
 		local dps_str, dam_str, shield_dam_str, dps_per_cost_str, strength_str = '', '', '', '', ''
 		local damageTypes = 0
 		if dps > 0 then
-			dam_str = dam_str .. numformat(dam,2)
-			shield_dam_str = shield_dam_str .. numformat(dam,2)
+			dam_str = dam_str .. numformat(dam)
+			shield_dam_str = shield_dam_str .. numformat(dam)
 			if cp.stats_damage_per_second then
-				dps_str = dps_str .. numformat(tonumber(cp.stats_damage_per_second),2)
+				dps_str = dps_str .. numformat(tonumber(cp.stats_damage_per_second))
 			else
-				dps_str = dps_str .. numformat(dps*mult,2)
+				dps_str = dps_str .. numformat(dps*mult)
 			end
 			dps_per_cost_str = dps_per_cost_str .. numformat(dps_per_cost)
 			strength_str = strength_str .. numformat(strength)
@@ -585,10 +583,10 @@ local function weapons2Table(cells, ws, unitDef, unitID, unitCost)
 				dps_per_cost_str = dps_per_cost_str .. ' + '
 				strength_str = strength_str .. ' + '
 			end
-			dam_str = dam_str .. color2incolor(colorCyan) .. numformat(damw,2) .. " (P)\008"
-			shield_dam_str = shield_dam_str .. color2incolor(colorCyan) .. numformat(math.floor(damw / 3),2) .. " (P)\008"
-			dps_str = dps_str .. color2incolor(colorCyan) .. numformat(dpsw*mult,2) .. " (P)\008"
-			dps_per_cost_str = dps_per_cost_str .. color2incolor(colorCyan) .. numformat(dpsw_per_cost,2) .. " (P)\008"
+			dam_str = dam_str .. color2incolor(colorCyan) .. numformat(damw) .. " (P)\008"
+			shield_dam_str = shield_dam_str .. color2incolor(colorCyan) .. numformat(math.floor(damw / 3)) .. " (P)\008"
+			dps_str = dps_str .. color2incolor(colorCyan) .. numformat(dpsw*mult) .. " (P)\008"
+			dps_per_cost_str = dps_per_cost_str .. color2incolor(colorCyan) .. numformat(dpsw_per_cost) .. " (P)\008"
 			strength_str = strength_str .. color2incolor(colorCyan) .. numformat(strengthw) .. " (P)\008"
 			damageTypes = damageTypes + 1
 		end
@@ -600,10 +598,10 @@ local function weapons2Table(cells, ws, unitDef, unitID, unitCost)
 				dps_per_cost_str = dps_per_cost_str .. ' + '
 				strength_str = strength_str .. ' + '
 			end
-			dam_str = dam_str .. color2incolor(colorPurple) .. numformat(dams,2) .. " (S)\008"
-			shield_dam_str = shield_dam_str .. color2incolor(colorPurple) .. numformat(math.floor(dams / 3),2) .. " (S)\008"
-			dps_str = dps_str .. color2incolor(colorPurple) .. numformat(dpss*mult,2) .. " (S)\008"
-			dps_per_cost_str = dps_per_cost_str .. color2incolor(colorPurple) .. numformat(dpss_per_cost,2) .. " (S)\008"
+			dam_str = dam_str .. color2incolor(colorPurple) .. numformat(dams) .. " (S)\008"
+			shield_dam_str = shield_dam_str .. color2incolor(colorPurple) .. numformat(math.floor(dams / 3)) .. " (S)\008"
+			dps_str = dps_str .. color2incolor(colorPurple) .. numformat(dpss*mult) .. " (S)\008"
+			dps_per_cost_str = dps_per_cost_str .. color2incolor(colorPurple) .. numformat(dpss_per_cost) .. " (S)\008"
 			strength_str = strength_str .. color2incolor(colorPurple) .. numformat(strengths) .. " (S)\008"
 			damageTypes = damageTypes + 1
 		end
@@ -616,10 +614,10 @@ local function weapons2Table(cells, ws, unitDef, unitID, unitCost)
 				dps_per_cost_str = dps_per_cost_str .. ' + '
 				strength_str = strength_str .. ' + '
 			end
-			dam_str = dam_str .. color2incolor(colorDisarm) .. numformat(damd,2) .. " (D)\008"
-			shield_dam_str = shield_dam_str .. color2incolor(colorDisarm) .. numformat(math.floor(damd / 3),2) .. " (D)\008"
-			dps_str = dps_str .. color2incolor(colorDisarm) .. numformat(dpsd*mult,2) .. " (D)\008"
-			dps_per_cost_str = dps_per_cost_str .. color2incolor(colorDisarm) .. numformat(dpsd_per_cost,2) .. " (D)\008"
+			dam_str = dam_str .. color2incolor(colorDisarm) .. numformat(damd) .. " (D)\008"
+			shield_dam_str = shield_dam_str .. color2incolor(colorDisarm) .. numformat(math.floor(damd / 3)) .. " (D)\008"
+			dps_str = dps_str .. color2incolor(colorDisarm) .. numformat(dpsd*mult) .. " (D)\008"
+			dps_per_cost_str = dps_per_cost_str .. color2incolor(colorDisarm) .. numformat(dpsd_per_cost) .. " (D)\008"
 			strength_str = strength_str .. color2incolor(colorDisarm) .. numformat(strengthd) .. " (D)\008"
 			damageTypes = damageTypes + 1
 		end
@@ -632,10 +630,10 @@ local function weapons2Table(cells, ws, unitDef, unitID, unitCost)
 				dps_per_cost_str = dps_per_cost_str .. ' + '
 				strength_str = strength_str .. ' + '
 			end
-			dam_str = dam_str .. color2incolor(colorCapture) .. numformat(damc,2) .. " (C)\008"
-			shield_dam_str = shield_dam_str .. color2incolor(colorCapture) .. numformat(damc,2) .. " (C)\008"
-			dps_str = dps_str .. color2incolor(colorCapture) .. numformat(dpsc*mult,2) .. " (C)\008"
-			dps_per_cost_str = dps_per_cost_str .. color2incolor(colorCapture) .. numformat(dpsc_per_cost,2) .. " (C)\008"
+			dam_str = dam_str .. color2incolor(colorCapture) .. numformat(damc) .. " (C)\008"
+			shield_dam_str = shield_dam_str .. color2incolor(colorCapture) .. numformat(damc) .. " (C)\008"
+			dps_str = dps_str .. color2incolor(colorCapture) .. numformat(dpsc*mult) .. " (C)\008"
+			dps_per_cost_str = dps_per_cost_str .. color2incolor(colorCapture) .. numformat(dpsc_per_cost) .. " (C)\008"
 			strength_str = strength_str .. color2incolor(colorCapture) .. numformat(strengthc) .. " (C)\008"
 			damageTypes = damageTypes + 1
 		end
@@ -685,19 +683,19 @@ local function weapons2Table(cells, ws, unitDef, unitID, unitCost)
 			elseif tonumber(cp.stats_shield_damage) ~= baseDamage then
 				cells[#cells+1] = ' - Shield damage:'
 				if damageTypes > 1 or mult > 1 then
-					cells[#cells+1] = numformat(math.floor(cp.stats_shield_damage * mult * comm_mult), 2) .. " (" .. shield_dam_str .. ")"
+					cells[#cells+1] = numformat(math.floor(cp.stats_shield_damage * mult * comm_mult)) .. " (" .. shield_dam_str .. ")"
 				else
-					cells[#cells+1] = numformat(math.floor(cp.stats_shield_damage * mult * comm_mult), 2)
+					cells[#cells+1] = numformat(math.floor(cp.stats_shield_damage * mult * comm_mult))
 				end
 			end
 		end
 		
 		if cp.post_capture_reload then
 			cells[#cells+1] = ' - Reloadtime:'
-			cells[#cells+1] = numformat (tonumber(cp.post_capture_reload)/30,2) .. 's'
+			cells[#cells+1] = numformat (tonumber(cp.post_capture_reload)/30) .. 's'
 		elseif show_reload then
 			cells[#cells+1] = ' - Reloadtime:'
-			cells[#cells+1] = numformat (reloadtime,2) .. 's'
+			cells[#cells+1] = numformat (reloadtime) .. 's'
 		end
 		if show_dps then
 			cells[#cells+1] = ' - DPS:'
@@ -715,7 +713,7 @@ local function weapons2Table(cells, ws, unitDef, unitID, unitCost)
 
 		if stun_time > 0 then
 			cells[#cells+1] = ' - Max stun time:'
-			cells[#cells+1] = color2incolor((damw > 0) and colorCyan or colorDisarm) .. numformat(stun_time,2) .. 's\008'
+			cells[#cells+1] = color2incolor((damw > 0) and colorCyan or colorDisarm) .. numformat(stun_time) .. 's\008'
 		end
 
 		if cp.setunitsonfire then
@@ -727,7 +725,7 @@ local function weapons2Table(cells, ws, unitDef, unitID, unitCost)
 		if show_range then
 			local range = cp.truerange or wd.range
 			cells[#cells+1] = ' - Range:'
-			cells[#cells+1] = numformat(range * ((unitID and Spring.GetUnitRulesParam(unitID, "comm_range_mult")) or 1),2) .. " elmo"
+			cells[#cells+1] = numformat(range * ((unitID and Spring.GetUnitRulesParam(unitID, "comm_range_mult")) or 1)) .. " elmo"
 		end
 
 		local aoe = wd.impactOnly and 0 or wd.damageAreaOfEffect
@@ -779,19 +777,19 @@ local function weapons2Table(cells, ws, unitDef, unitID, unitCost)
 		if wd.tracks and wd.turnRate > 0 then
 			cells[#cells+1] = ' - Homing:'
 			local turnrate = wd.turnRate * 30 * 180 / math.pi
-			cells[#cells+1] = numformat(turnrate, 1) .. " deg/s"
+			cells[#cells+1] = numformat(turnrate) .. " deg/s"
 		end
 
 		if wd.wobble > 0 then
 			cells[#cells+1] = ' - Wobbly:'
 			local wobble = wd.wobble * 30 * 180 / math.pi
-			cells[#cells+1] = "up to " .. numformat(wobble, 1) .. " deg/s"
+			cells[#cells+1] = "up to " .. numformat(wobble) .. " deg/s"
 		end
 
 		if wd.sprayAngle > 0 then
 			cells[#cells+1] = ' - Inaccuracy:'
 			local accuracy = math.asin(wd.sprayAngle) * 90 / math.pi
-			cells[#cells+1] = numformat(accuracy, 1) .. " deg"
+			cells[#cells+1] = numformat(accuracy) .. " deg"
 		end
 
 		if wd.type == "BeamLaser" and wd.beamtime > 0.2 then
@@ -854,15 +852,13 @@ local function weapons2Table(cells, ws, unitDef, unitID, unitCost)
 		end
 
 		if cp.smoothradius then
-			cells[#cells+1] = ' - Smoothes ground'
-			--cells[#cells+1] = cp.smoothradius .. " radius" -- overlaps
-			cells[#cells+1] = ''
+			cells[#cells+1] = ' - Smooth ground'
+			cells[#cells+1] = numformat((tonumber(cp.smoothmult or 0) or 0)*100) .. '%'
 		end
 
 		if cp.movestructures then
-			cells[#cells+1] = ' - Smoothes under structures'
-			--cells[#cells+1] = cp.smoothradius .. " radius" -- overlaps
-			cells[#cells+1] = ''
+			cells[#cells+1] = ' - Smooth structures'
+			cells[#cells+1] = numformat((tonumber(cp.movestructures or 0) or 0)*100) .. '%'
 		end
 
 		local highTraj = wd.highTrajectory
@@ -982,6 +978,11 @@ local function printAbilities(ud, unitID, unitCost)
 		cells[#cells+1] = areaCloakUpkeep .. " E/s"
 		cells[#cells+1] = ' - Radius:'
 		cells[#cells+1] = areaCloakRadius .. " elmo"
+		if cp.area_cloak_move_mult then
+			cells[#cells+1] = ' - Move speed:'
+			cells[#cells+1] = numformat(tonumber(cp.area_cloak_move_mult)*100) .. "%"
+		
+		end
 		cells[#cells+1] = ''
 		cells[#cells+1] = ''
 	end
@@ -1049,7 +1050,7 @@ local function printAbilities(ud, unitID, unitCost)
 		cells[#cells+1] = ' - Range:'
 		cells[#cells+1] = cp.jump_range .. " elmo"
 		cells[#cells+1] = ' - Reload: '
-		cells[#cells+1] = cp.jump_reload .. 's'
+		cells[#cells+1] = (cp.jump_reload + ((unitID and Spring.GetUnitRulesParam(unitID, "upgradesJumpReloadMod")) or 0)) .. 's'
 		cells[#cells+1] = ' - Speed:'
 		cells[#cells+1] = numformat(30*tonumber(cp.jump_speed)) .. " elmo/s"
 		cells[#cells+1] = ' - Midair jump:'
@@ -1116,9 +1117,9 @@ local function printAbilities(ud, unitID, unitCost)
 		cells[#cells+1] = ' - Spawns a beacon for one-way recall'
 		cells[#cells+1] = ''
 		cells[#cells+1] = ' - Spawn time:'
-		cells[#cells+1] = numformat(tonumber(cp.teleporter_beacon_spawn_time), 1) .. "s"
+		cells[#cells+1] = numformat(tonumber(cp.teleporter_beacon_spawn_time)) .. "s"
 		cells[#cells+1] = ' - Throughput: '
-		cells[#cells+1] = numformat(tonumber(cp.teleporter_throughput), 1) .. " mass / s"
+		cells[#cells+1] = numformat(tonumber(cp.teleporter_throughput)) .. " mass / s"
 		cells[#cells+1] = ''
 		cells[#cells+1] = ''
 	end
@@ -1157,12 +1158,12 @@ local function printAbilities(ud, unitID, unitCost)
 			cells[#cells+1] = math.floor((tonumber(cp.boost_reload_speed_mult or "1")*100) + 0.5) .. "%"
 		end
 		cells[#cells+1] = ' - Duration: '
-		cells[#cells+1] = numformat(tonumber(cp.boost_duration)/30, 1) .. 's'
+		cells[#cells+1] = numformat(tonumber(cp.boost_duration)/30) .. 's'
 		cells[#cells+1] = ' - Reload: '
-		cells[#cells+1] = numformat(tonumber(cp.specialreloadtime)/30, 1) .. 's'
+		cells[#cells+1] = numformat(tonumber(cp.specialreloadtime)/30) .. 's'
 		if cp.boost_distance then
 			cells[#cells+1] = ' - Distance: '
-			cells[#cells+1] = numformat(tonumber(cp.boost_distance), 1) .. ' elmos (approx.)'
+			cells[#cells+1] = numformat(tonumber(cp.boost_distance)) .. ' elmos (approx.)'
 		end
 		cells[#cells+1] = ''
 		cells[#cells+1] = ''
@@ -1469,7 +1470,7 @@ local function printunitinfo(ud, buttonWidth, unitID)
 
 	local cost = ud.metalCost
 	local health = numformat(ud.health)
-	local speed = numformat(ud.speed)
+	local speed = numformat(ud.speed, true) -- Speeds often have 0.5s
 	local mass = numformat(ud.mass)
 	
 	-- stuff for modular commanders
@@ -1483,7 +1484,7 @@ local function printunitinfo(ud, buttonWidth, unitID)
 	if isCommander then
 		cost = Spring.GetUnitRulesParam(unitID, "comm_cost") or 1200
 		health = select(2, Spring.GetUnitHealth(unitID))
-		speed = numformat(ud.speed * (Spring.GetUnitRulesParam(unitID, "upgradesSpeedMult") or 1))
+		speed = numformat(ud.speed * (Spring.GetUnitRulesParam(unitID, "upgradesSpeedMult") or 1), true) -- Show a decimal place for comms due to fractional speed modules
 		mass = numformat(Spring.GetUnitRulesParam(unitID, "massOverride") or ud.mass)
 
 		statschildren[#statschildren+1] = Label:New{ caption = "COMMANDER", textColor = color.stats_header, }
@@ -1574,14 +1575,14 @@ local function printunitinfo(ud, buttonWidth, unitID)
 
 	if metal ~= 0 then
 		statschildren[#statschildren+1] = Label:New{ caption = 'Metal: ', textColor = color.stats_fg, }
-		statschildren[#statschildren+1] = Label:New{ caption = (metal > 0 and '+' or '') .. numformat(metal,2) .. " M/s", textColor = color.stats_fg, }
+		statschildren[#statschildren+1] = Label:New{ caption = (metal > 0 and '+' or '') .. numformat(metal) .. " M/s", textColor = color.stats_fg, }
 	end
 	
 	local energy = (isCommander and (Spring.GetUnitRulesParam(unitID, "wanted_energyIncome") or 0) or ((ud.energyMake or 0) - (ud.customParams.upkeep_energy or 0) + (ud.customParams.income_energy or 0)))
 
 	if energy ~= 0 then
 		statschildren[#statschildren+1] = Label:New{ caption = 'Energy: ', textColor = color.stats_fg, }
-		statschildren[#statschildren+1] = Label:New{ caption = (energy > 0 and '+' or '') .. numformat(energy,2) .. " E/s", textColor = color.stats_fg, }
+		statschildren[#statschildren+1] = Label:New{ caption = (energy > 0 and '+' or '') .. numformat(energy) .. " E/s", textColor = color.stats_fg, }
 	end
 	
 	if ud.losRadius > 0 then
@@ -1709,26 +1710,26 @@ local function printunitinfo(ud, buttonWidth, unitID)
 
 		statschildren[#statschildren+1] = Label:New{ caption = 'Damage: ', textColor = color.stats_fg, }
 		if (weaponStats.paralyzer) then
-			statschildren[#statschildren+1] = Label:New{ caption = numformat(damageValue,2) .. " (P)", textColor = colorCyan, }
+			statschildren[#statschildren+1] = Label:New{ caption = numformat(damageValue) .. " (P)", textColor = colorCyan, }
 			statschildren[#statschildren+1] = Label:New{ caption = 'Max EMP time: ', textColor = color.stats_fg, }
-			statschildren[#statschildren+1] = Label:New{ caption = numformat(weaponStats.damages.paralyzeDamageTime,2) .. "s", textColor = color.stats_fg, }
+			statschildren[#statschildren+1] = Label:New{ caption = numformat(weaponStats.damages.paralyzeDamageTime) .. "s", textColor = color.stats_fg, }
 		else
 			local damageSlow = (wepCp.timeslow_damagefactor or 0)*damageValue
 			local damageText
 			if damageSlow > 0 then
 				if wepCp.timeslow_onlyslow == "1" then
-					 damageText = color2incolor(colorPurple) .. numformat(damageSlow,2) .. " (S)\008"
+					 damageText = color2incolor(colorPurple) .. numformat(damageSlow) .. " (S)\008"
 				else
-					damageText = numformat(damageValue,2) .. " + " .. color2incolor(colorPurple) .. numformat(damageSlow,2) .. " (S)\008"
+					damageText = numformat(damageValue) .. " + " .. color2incolor(colorPurple) .. numformat(damageSlow) .. " (S)\008"
 				end
 			else
-				damageText = numformat(damageValue,2)
+				damageText = numformat(damageValue)
 			end
 			statschildren[#statschildren+1] = Label:New{ caption = damageText, textColor = color.stats_fg, }
 		end
 
 		statschildren[#statschildren+1] = Label:New{ caption = 'AoE radius: ', textColor = color.stats_fg, }
-		statschildren[#statschildren+1] = Label:New{ caption = numformat(weaponStats.damageAreaOfEffect,2) .. " elmo", textColor = color.stats_fg, }
+		statschildren[#statschildren+1] = Label:New{ caption = numformat(weaponStats.damageAreaOfEffect) .. " elmo", textColor = color.stats_fg, }
 		
 		if (weaponStats.customParams.setunitsonfire) then
 			statschildren[#statschildren+1] = Label:New{ caption = 'Afterburn: ', textColor = color.stats_fg, }
@@ -1736,7 +1737,7 @@ local function printunitinfo(ud, buttonWidth, unitID)
 		end
 
 		-- statschildren[#statschildren+1] = Label:New{ caption = 'Edge Damage: ', textColor = color.stats_fg, }
-		-- statschildren[#statschildren+1] = Label:New{ caption = numformat(damageValue * weaponStats.edgeEffectiveness,2), textColor = color.stats_fg, }
+		-- statschildren[#statschildren+1] = Label:New{ caption = numformat(damageValue * weaponStats.edgeEffectiveness), textColor = color.stats_fg, }
 		-- edge damage is always 0, see http://springrts.com/mediawiki/images/1/1c/EdgeEffectiveness.png
 
 	end

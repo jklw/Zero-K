@@ -21,6 +21,8 @@ local spGetPlayerInfo       = Spring.GetPlayerInfo
 local spGetPlayerList       = Spring.GetPlayerList
 
 local modOptions = Spring.GetModOptions()
+local ALLOW_EXTRA_COM = (modOptions.equalcom ~= "off")
+local FORCE_EXTRA_COM = (modOptions.equalcom == "enable")
 
 local DELAYED_AFK_SPAWN = false
 local COOP_MODE = false
@@ -31,6 +33,7 @@ local setAiStartPos = (modOptions.setaispawns == "1")
 local CAMPAIGN_SPAWN_DEBUG = (Spring.GetModOptions().campaign_spawn_debug == "1")
 
 local gaiateam = Spring.GetGaiaTeamID()
+local allyTeamAFKers = {}
 
 local SAVE_FILE = "Gadgets/start_unit_setup.lua"
 
@@ -128,6 +131,7 @@ local teamSides = {} -- sides selected ingame from widgets - per teams
 
 local playerIDsByName = {}
 local commChoice = {}
+local allyTeamCommanderCount = {}
 
 --local prespawnedCommIDs = {}	-- [teamID] = unitID
 
@@ -236,7 +240,7 @@ local function GetFacingDirection(x, z, teamID)
 			or ((z>Game.mapSizeZ/2) and "north" or "south")
 end
 
-local function getMiddleOfStartBox(teamID)
+local function GetRecommendedStartPosition(teamID, n) -- allyteams can have multiple start positions, go and get the nth one.
 	local x = Game.mapSizeX / 2
 	local z = Game.mapSizeZ / 2
 
@@ -244,7 +248,8 @@ local function getMiddleOfStartBox(teamID)
 	if boxID then
 		local startposList = GG.startBoxConfig[boxID] and GG.startBoxConfig[boxID].startpoints
 		if startposList then
-			local startpos = startposList[1] -- todo: distribute afkers over them all instead of always using the 1st
+			local maxpoints = #startposList
+			local startpos = startposList[(n%maxpoints) + 1] -- recycle if you run out of points.
 			x = startpos[1]
 			z = startpos[2]
 		end
@@ -270,9 +275,11 @@ local function GetStartPos(teamID, teamInfo, isAI)
 		end
 		return x, y, z
 	end
-	
+	local allyTeamID = select(6, Spring.GetTeamInfo(teamID))
 	if not (Spring.GetTeamRulesParam(teamID, "valid_startpos") or isAI) then
-		local x, y, z = getMiddleOfStartBox(teamID)
+		local index = allyTeamAFKers[allyTeamID] or 0
+		allyTeamAFKers[allyTeamID] = index + 1
+		local x, y, z = GetRecommendedStartPosition(teamID, index)
 		return x, y, z
 	end
 	
@@ -281,7 +288,9 @@ local function GetStartPos(teamID, teamInfo, isAI)
 	-- AIs can place them -- remove this once AIs are able to be filtered through AllowStartPosition
 	local boxID = isAI and Spring.GetTeamRulesParam(teamID, "start_box_id")
 	if boxID and not GG.CheckStartbox(boxID, x, z) then
-		x,y,z = getMiddleOfStartBox(teamID)
+		local index = allyTeamAFKers[allyTeamID] or 0
+		allyTeamAFKers[allyTeamID] = index + 1
+		x,y,z = GetRecommendedStartPosition(teamID, index)
 	end
 	return x, y, z
 end
@@ -346,6 +355,7 @@ local function SpawnStartUnit(teamID, playerID, isAI, bonusSpawn, notAtTheStartO
 		if not unitID then
 			return
 		end
+		allyTeamCommanderCount[allyTeamID] = (allyTeamCommanderCount[allyTeamID] or 0) + 1
 		
 		if GG.GalaxyCampaignHandler then
 			GG.GalaxyCampaignHandler.DeployRetinue(unitID, x, z, facing, teamID)
@@ -485,6 +495,43 @@ local function GetPregameUnitStorage(teamID)
 	return storage
 end
 
+local function SpawnCustomKeyExtraCommanders(teamID)
+	if not ALLOW_EXTRA_COM then
+		return
+	end
+	local playerlist = Spring.GetPlayerList(teamID, true)
+	playerlist = workAroundSpecsInTeamZero(playerlist, teamID)
+	if playerlist then
+		for i = 1, #playerlist do
+			local customKeys = select(10, Spring.GetPlayerInfo(playerlist[i]))
+			if customKeys and customKeys.extracomm then
+				for j = 1, tonumber(customKeys.extracomm) do
+					Spring.Echo("Spawing a commander")
+					SpawnStartUnit(teamID, playerlist[i], false, true)
+				end
+			end
+		end
+	end
+end
+
+local function SpawnAllyTeamExtraCommanders(allyTeamID, wanted)
+	local teams = Spring.GetTeamList(allyTeamID)
+	Spring.Utilities.PermuteList(teams)
+	local tries = 50
+	while wanted > 0 and tries > 0 do
+		for i = 1, #teams do
+			local teamID = teams[i]
+			local _, playerID, _, isAI = spGetTeamInfo(teamID, false)
+			SpawnStartUnit(teamID, playerID, isAI, true)
+			wanted = wanted - 1
+			if wanted <= 0 then
+				break
+			end
+		end
+		tries = tries - 1
+	end
+end
+
 function gadget:GameStart()
 	if Spring.Utilities.tobool(Spring.GetGameRulesParam("loadedGame")) then
 		return
@@ -511,7 +558,7 @@ function gadget:GameStart()
 	end
 
 	-- spawn units
-	for teamNum,team in ipairs(Spring.GetTeamList()) do
+	for teamNum, team in ipairs(Spring.GetTeamList()) do
 		
 		-- clear resources
 		-- actual resources are set depending on spawned unit and setup
@@ -563,18 +610,18 @@ function gadget:GameStart()
 			end
 
 			-- extra comms
-			local playerlist = Spring.GetPlayerList(team, true)
-			playerlist = workAroundSpecsInTeamZero(playerlist, team)
-			if playerlist then
-				for i = 1, #playerlist do
-					local customKeys = select(10, Spring.GetPlayerInfo(playerlist[i]))
-					if customKeys and customKeys.extracomm then
-						for j = 1, tonumber(customKeys.extracomm) do
-							Spring.Echo("Spawing a commander")
-							SpawnStartUnit(team, playerlist[i], false, true)
-						end
-					end
-				end
+			SpawnCustomKeyExtraCommanders(team)
+		end
+	end
+	
+	if FORCE_EXTRA_COM then
+		local maxComms = 0
+		for allyTeamID, count in pairs(allyTeamCommanderCount) do
+			maxComms = math.max(maxComms, count)
+		end
+		for allyTeamID, count in pairs(allyTeamCommanderCount) do
+			if count < maxComms then
+				SpawnAllyTeamExtraCommanders(allyTeamID, maxComms - count)
 			end
 		end
 	end

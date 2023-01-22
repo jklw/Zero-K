@@ -28,6 +28,7 @@ if gadgetHandler:IsSyncedCode() then
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 local USE_TERRAIN_TEXTURE_CHANGE = true -- (Spring.GetModOptions() or {}).terratex == "1"
+local ECHO_COST = false
 
 -- Speedups
 local cos                   = math.cos
@@ -2171,13 +2172,18 @@ end
 --------------------------------------------------------------------------------
 
 local function deregisterTerraformUnit(id,terraformIndex,origin)
-	
 	if not terraformUnit[id] then
 		Spring.Log(gadget:GetInfo().name, LOG.ERROR, "Terraform:")
 		Spring.Log(gadget:GetInfo().name, LOG.ERROR, "Attempted to remove nil terraform ID")
 		Spring.Log(gadget:GetInfo().name, LOG.ERROR, "Error Tpye " .. origin)
 		Spring.Log(gadget:GetInfo().name, LOG.ERROR, "Tell Google Frog")
 		return
+	end
+	
+	if ECHO_COST then
+		local cost = math.floor(terraformUnit[id].totalSpent + 0.5)
+		Spring.Echo("TerraCost", cost)
+		Spring.Utilities.UnitEcho(id, cost)
 	end
 	
 	--Removed Intercept Check
@@ -2231,7 +2237,6 @@ local function deregisterTerraformUnit(id,terraformIndex,origin)
 		terraformOrder[t.order].index[t.orderIndex] = terraformIndex
 	end
 	terraformUnitCount = terraformUnitCount - 1
-
 end
 
 local function updateTerraformEdgePoints(id)
@@ -3629,12 +3634,49 @@ function gadget:UnitDestroyed(unitID, unitDefID)
 			ux = floor((ux+8)/16)*16
 			uz = floor((uz+8)/16)*16
 			
+			local shrakaCliff = config.shrakaPyramidDiff
+			
+			local heightCache = {}
+			local function Height(x, z)
+				if heightCache[x] and heightCache[x][z] then
+					return heightCache[x][z]
+				end
+				heightCache[x] = heightCache[x] or {}
+				heightCache[x][z] = spGetGroundHeight(x, z)
+				return heightCache[x][z]
+			end
+			
 			spSetHeightMapFunc(
 				function()
+					local maxDiff, x, z, toAdd
 					for i = 1, #posX, 1 do
-						local x, z = posX[i] + ux, posZ[i] + uz
-						if IsPositionTerraformable(x, z) then
-							spAddHeightMap(x, z, posY[i])
+						x, z = posX[i] + ux, posZ[i] + uz
+						toAdd = posY[i]
+						if shrakaCliff then
+							if toAdd > 0 then
+								maxDiff = Height(x, z) - min(Height(x - 8, z), Height(x + 8, z), Height(x, z - 8), Height(x, z + 8))
+								maxDiff = shrakaCliff - maxDiff
+								if toAdd > maxDiff then
+									if maxDiff > 0 then
+										toAdd = maxDiff
+									else
+										toAdd = false
+									end
+								end
+							else
+								maxDiff = max(Height(x - 8, z), Height(x + 8, z), Height(x, z - 8), Height(x, z + 8)) - Height(x, z)
+								maxDiff = maxDiff - shrakaCliff
+								if toAdd < maxDiff then
+									if maxDiff < 0 then
+										toAdd = maxDiff
+									else
+										toAdd = false
+									end
+								end
+							end
+						end
+						if toAdd and IsPositionTerraformable(x, z) then
+							spAddHeightMap(x, z, toAdd)
 						end
 					end
 				end

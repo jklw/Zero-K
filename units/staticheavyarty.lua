@@ -16,6 +16,10 @@ return { staticheavyarty = {
   corpse                        = [[DEAD]],
 
   customParams                  = {
+    neededlink     = 50,
+    pylonrange     = 50,
+    keeptooltip    = [[any string I want]],
+
     bait_level_default = 1,
     want_proximity_targetting = 1,
     aimposoffset = [[0 50 -7]],
@@ -78,9 +82,10 @@ return { staticheavyarty = {
       craterMult              = 0.5,
 
       customParams            = {
-        gatherradius = [[128]],
-        smoothradius = [[96]],
-        smoothmult   = [[0.4]],
+        gatherradius     = [[240]],
+        smoothradius     = [[120]],
+        smoothmult       = [[0.5]],
+        movestructures   = [[0.25]],
         
         light_color = [[2.4 1.5 0.6]],
       },
