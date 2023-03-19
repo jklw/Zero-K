@@ -6,8 +6,6 @@ lw=(
     cmd_moving_lances_hold_fire.lua
     cmd_stored_build_queue.lua
     gui_contextmenu.lua
-    gui_chili_nuke_warning.lua
-    gui_chili_share.lua
     cmd_hold_ctrl_to_place_and_morph.lua
     dbg_unit_stats_dumper.lua
 )
@@ -31,6 +29,8 @@ do
 done
 
 toTrash=(
+    gui_chili_nuke_warning.lua
+    gui_chili_share.lua
     gui_keyboard_manager.lua
     gui_chili_integral_menu.lua
     ../Configs/border_menu_commands.lua
