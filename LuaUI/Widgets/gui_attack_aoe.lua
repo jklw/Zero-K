@@ -20,6 +20,7 @@ end
 --------------------------------------------------------------------------------
 local numScatterPoints     = 32
 local aoeColor             = {1, 0, 0, 1}
+local cloakerColor         = {0, 0.8, 0.8, 1}
 local aoeLineWidthMult     = 64
 local scatterColor         = {1, 1, 0, 1}
 local scatterLineWidthMult = 1024
@@ -198,16 +199,15 @@ end
 --------------------------------------------------------------------------------
 
 local function getWeaponInfo(weaponDef, unitDef)
-
 	local retData
 
 	local weaponType = weaponDef.type
 	local spray = (weaponDef.customParams and weaponDef.customParams.gui_sprayangle) or weaponDef.sprayAngle
 	local scatter = weaponDef.accuracy + spray
-	local aoe = weaponDef.damageAreaOfEffect
+	local aoe = tonumber(weaponDef.customParams.gui_aoe) or weaponDef.damageAreaOfEffect
 	local cost = unitDef.metalCost
 	local waterWeapon = weaponDef.waterWeapon
-	local ee = weaponDef.edgeEffectiveness
+	local ee = tonumber(weaponDef.customParams.gui_ee) or weaponDef.edgeEffectiveness
 	if (weaponDef.cylinderTargetting >= 100) then
 		retData = {type = "orbital", scatter = scatter}
 	elseif (weaponType == "Cannon") then
@@ -255,7 +255,7 @@ local function getWeaponInfo(weaponDef, unitDef)
 		retData = {type = "direct", scatter = scatter, range = weaponDef.range}
 	end
 
-	if not weaponDef.impactOnly then
+	if weaponDef.customParams.gui_aoe or not weaponDef.impactOnly then
 		retData.aoe = aoe
 	else
 		retData.aoe = 0
@@ -299,15 +299,19 @@ local function SetupUnit(unitDef, unitID)
 		if (weapon.weaponDef) and ((not unitID) or num == weapon1 or num == weapon2) then
 			local weaponDef = WeaponDefs[weapon.weaponDef]
 			if (weaponDef) then
-				local aoe = weaponDef.damageAreaOfEffect
+				local aoe = tonumber(weaponDef.customParams.gui_aoe) or weaponDef.damageAreaOfEffect
 				if (weaponDef.manualFire and unitDef.canManualFire) or num == manualfireWeapon then
 					retDgunInfo = getWeaponInfo(weaponDef, unitDef)
 					if retDgunInfo.range then
+						retDgunInfo.circleMode = weaponDef.customParams.attack_aoe_circle_mode
 						if weaponDef.customParams.truerange then
 							retDgunInfo.range = tonumber(weaponDef.customParams.truerange)
 						end
 						if weaponDef.customParams.gui_draw_range then
 							retDgunInfo.range = tonumber(weaponDef.customParams.gui_draw_range)
+						end
+						if weaponDef.customParams.gui_draw_leashed_to_range then
+							retDgunInfo.drawLeashedToRange = true
 						end
 						if rangeMult then
 							retDgunInfo.range = retDgunInfo.range * rangeMult
@@ -326,8 +330,12 @@ local function SetupUnit(unitDef, unitID)
 
 	if (maxWeaponDef) then
 		retAoeInfo = getWeaponInfo(maxWeaponDef, unitDef)
+		retAoeInfo.circleMode = maxWeaponDef.customParams.attack_aoe_circle_mode
 		if maxWeaponDef.customParams.gui_draw_range then
 			retAoeInfo.range = tonumber(maxWeaponDef.customParams.gui_draw_range)
+		end
+		if maxWeaponDef.customParams.gui_draw_leashed_to_range then
+			retAoeInfo.drawLeashedToRange = true
 		end
 		if retAoeInfo.range and rangeMult then
 			retAoeInfo.range = retAoeInfo.range * rangeMult
@@ -350,6 +358,7 @@ end
 --------------------------------------------------------------------------------
 --updates
 --------------------------------------------------------------------------------
+
 local function UpdateSelection(sel)
 	local maxCost = 0
 	dgunUnitInfo = nil
@@ -415,15 +424,25 @@ end
 --aoe
 --------------------------------------------------------------------------------
 
-local function DrawAoE(tx, ty, tz, aoe, ee, alphaMult, offset)
+local function DrawAoE(tx, ty, tz, aoe, ee, alphaMult, offset, circleMode)
 	glLineWidth(math.max(0.05, aoeLineWidthMult * aoe / mouseDistance))
-
-	for i = 1, numAoECircles do
-		local proportion = i / (numAoECircles + 1)
-		local radius = aoe * proportion
-		local alpha = aoeColor[4] * (1 - proportion) / (1 - proportion * ee) * (1 - GetSecondPart(offset or 0)) * (alphaMult or 1)
-		glColor(aoeColor[1], aoeColor[2], aoeColor[3], alpha)
-		DrawCircle(tx, ty, tz, radius)
+	
+	if not circleMode then
+		for i = 1, numAoECircles do
+			local proportion = i / (numAoECircles + 1)
+			local radius = aoe * proportion
+			local alpha = aoeColor[4] * (1 - proportion) / (1 - proportion * ee) * (1 - GetSecondPart(offset or 0)) * (alphaMult or 1)
+			glColor(aoeColor[1], aoeColor[2], aoeColor[3], alpha)
+			DrawCircle(tx, ty, tz, radius)
+		end
+	elseif circleMode == "cloaker" then
+		for i = 1, 3 do
+			local proportion = (i + 17) / 20
+			local radius = aoe * proportion
+			local alpha = aoeColor[4] * (i / 3) * (1 - GetSecondPart(offset or 0)) * (alphaMult or 0.55)
+			glColor(cloakerColor[1], cloakerColor[2], cloakerColor[3], alpha)
+			DrawCircle(tx, ty, tz, radius)
+		end
 	end
 
 	glColor(1,1,1,1)
@@ -615,6 +634,7 @@ end
 --------------------------------------------------------------------------------
 --wobble
 --------------------------------------------------------------------------------
+
 local function DrawWobbleScatter(scatter, fx, fy, fz, tx, ty, tz, rangeScatter, range)
 	local dx = tx - fx
 	local dy = ty - fy
@@ -638,6 +658,7 @@ end
 --------------------------------------------------------------------------------
 --direct
 --------------------------------------------------------------------------------
+
 local function DrawDirectScatter(scatter, fx, fy, fz, tx, ty, tz, range, unitRadius)
 	local dx = tx - fx
 	local dy = ty - fy
@@ -670,6 +691,7 @@ end
 --------------------------------------------------------------------------------
 --dropped
 --------------------------------------------------------------------------------
+
 local function DrawDroppedScatter(aoe, ee, scatter, v, fx, fy, fz, tx, ty, tz, salvoSize, salvoDelay)
 	local dx = tx - fx
 	local dz = tz - fz
@@ -703,6 +725,7 @@ end
 --------------------------------------------------------------------------------
 --orbital
 --------------------------------------------------------------------------------
+
 local function DrawOrbitalScatter(scatter, tx, ty, tz)
 	glColor(scatterColor)
 	glLineWidth(scatterLineWidthMult / mouseDistance)
@@ -714,6 +737,7 @@ end
 --------------------------------------------------------------------------------
 --underwater
 --------------------------------------------------------------------------------
+
 local function DrawWaterDepth(tx, ty, tz)
 	glColor(depthColor)
 	glLineWidth(depthLineWidth)
@@ -722,6 +746,21 @@ local function DrawWaterDepth(tx, ty, tz)
 	glLineStipple(false)
 	glColor(1,1,1,1)
 	glLineWidth(1)
+end
+
+local function LeashDrawRange(unitID, range, tx, ty, tz)
+	local ux, _, uz = GetUnitPosition(unitID)
+	if not ux then
+		return tx, ty, tz
+	end
+	vx, vz = (tx - ux), (tz - uz)
+	local dist = math.sqrt(vx*vx + vz*vz)
+	if dist < range then
+		return tx, ty, tz
+	end
+	tx, tz = ux + vx * range/dist, uz + vz * range/dist
+	ty = Spring.GetGroundHeight(tx, tz)
+	return tx, ty, tz
 end
 
 --------------------------------------------------------------------------------
@@ -780,6 +819,10 @@ function widget:DrawWorld()
 	else
 		return
 	end
+	
+	if info.drawLeashedToRange then
+		tx, ty, tz = LeashDrawRange(unitID, info.range, tx, ty, tz)
+	end
 
 	local _,_,_,fx, fy, fz = GetUnitPosition(unitID, true)
 
@@ -808,23 +851,23 @@ function widget:DrawWorld()
 		else
 			trajectory = -1
 		end
-		DrawAoE(tx, ty, tz, info.aoe, info.ee)
+		DrawAoE(tx, ty, tz, info.aoe, info.ee, false, false, info.circleMode)
 		DrawBallisticScatter(info.scatter, info.v, info.mygravity, fx, fy, fz, tx, ty, tz, trajectory, info.range)
 	elseif (weaponType == "tracking") then
-		DrawAoE(tx, ty, tz, info.aoe, info.ee)
+		DrawAoE(tx, ty, tz, info.aoe, info.ee, false, false, info.circleMode)
 	elseif (weaponType == "direct") then
-		DrawAoE(tx, ty, tz, info.aoe, info.ee)
+		DrawAoE(tx, ty, tz, info.aoe, info.ee, false, false, info.circleMode)
 		DrawDirectScatter(info.scatter, fx, fy, fz, tx, ty, tz, info.range, GetUnitRadius(unitID))
 	elseif (weaponType == "dropped") then
 		DrawDroppedScatter(info.aoe, info.ee, info.scatter, info.v, fx, info.h, fz, tx, ty, tz, info.salvoSize, info.salvoDelay)
 	elseif (weaponType == "wobble") then
-		DrawAoE(tx, ty, tz, info.aoe, info.ee)
+		DrawAoE(tx, ty, tz, info.aoe, info.ee, false, false, info.circleMode)
 		DrawWobbleScatter(info.scatter, fx, fy, fz, tx, ty, tz, info.rangeScatter, info.range)
 	elseif (weaponType == "orbital") then
-		DrawAoE(tx, ty, tz, info.aoe, info.ee)
+		DrawAoE(tx, ty, tz, info.aoe, info.ee, false, false, info.circleMode)
 		DrawOrbitalScatter(info.scatter, tx, ty, tz)
 	elseif (weaponType ~= "dontdraw") then
-		DrawAoE(tx, ty, tz, info.aoe, info.ee)
+		DrawAoE(tx, ty, tz, info.aoe, info.ee, false, false, info.circleMode)
 	end
 
 	if (cmd == CMD_MANUALFIRE) and info.range then

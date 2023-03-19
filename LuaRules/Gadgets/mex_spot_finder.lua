@@ -21,20 +21,20 @@ if (gadgetHandler:IsSyncedCode()) then
 -- Config
 ------------------------------------------------------------
 local MAPSIDE_METALMAP = "mapconfig/map_metal_layout.lua"
+local ALT_MAPSIDE_METALMAP = "mapconfig/map_resource_spot_layout.lua"
 local GAMESIDE_METALMAP = "LuaRules/Configs/MetalSpots/" .. (Game.mapName or "") .. ".lua"
 
 local DEFAULT_MEX_INCOME = 2
 local MINIMUM_MEX_INCOME = 0.2
 
-local gridSize = 16 -- Resolution of metal map
-local buildGridSize = 8 -- Resolution of build positions
+local gridSize = Game.metalMapSquareSize -- Resolution of metal map
+local buildGridSize = Game.squareSize -- Resolution of build positions
 
-local METAL_MAP_SQUARE_SIZE = 16
 local MEX_RADIUS = Game.extractorRadius
 local MAP_SIZE_X = Game.mapSizeX
-local MAP_SIZE_X_SCALED = MAP_SIZE_X / METAL_MAP_SQUARE_SIZE
+local MAP_SIZE_X_SCALED = MAP_SIZE_X / gridSize
 local MAP_SIZE_Z = Game.mapSizeZ
-local MAP_SIZE_Z_SCALED = MAP_SIZE_Z / METAL_MAP_SQUARE_SIZE
+local MAP_SIZE_Z_SCALED = MAP_SIZE_Z / gridSize
 
 ------------------------------------------------------------
 -- Speedups
@@ -146,15 +146,15 @@ end
 local function AdjustCoordinates(x, z)
 	local centerX, centerZ
 	if (mexDefInfo.oddX) then
-		centerX = (floor( x / METAL_MAP_SQUARE_SIZE) + 0.5) * METAL_MAP_SQUARE_SIZE
+		centerX = (floor( x / gridSize) + 0.5) * gridSize
 	else
-		centerX = floor( x / METAL_MAP_SQUARE_SIZE + 0.5) * METAL_MAP_SQUARE_SIZE
+		centerX = floor( x / gridSize + 0.5) * gridSize
 	end
 	
 	if (mexDefInfo.oddZ) then
-		centerZ = (floor( z / METAL_MAP_SQUARE_SIZE) + 0.5) * METAL_MAP_SQUARE_SIZE
+		centerZ = (floor( z / gridSize) + 0.5) * gridSize
 	else
-		centerZ = floor( z / METAL_MAP_SQUARE_SIZE + 0.5) * METAL_MAP_SQUARE_SIZE
+		centerZ = floor( z / gridSize + 0.5) * gridSize
 	end
 	
 	return centerX, centerZ
@@ -163,10 +163,10 @@ end
 local function IntegrateMetalFromAdjusted(centerX, centerZ, radius)
 	radius = radius or MEX_RADIUS
 	
-	local startX = floor((centerX - radius) / METAL_MAP_SQUARE_SIZE)
-	local startZ = floor((centerZ - radius) / METAL_MAP_SQUARE_SIZE)
-	local endX = floor((centerX + radius) / METAL_MAP_SQUARE_SIZE)
-	local endZ = floor((centerZ + radius) / METAL_MAP_SQUARE_SIZE)
+	local startX = floor((centerX - radius) / gridSize)
+	local startZ = floor((centerZ - radius) / gridSize)
+	local endX = floor((centerX + radius) / gridSize)
+	local endZ = floor((centerZ + radius) / gridSize)
 	startX, startZ = max(startX, 0), max(startZ, 0)
 	endX, endZ = min(endX, MAP_SIZE_X_SCALED - 1), min(endZ, MAP_SIZE_Z_SCALED - 1)
 	
@@ -175,7 +175,7 @@ local function IntegrateMetalFromAdjusted(centerX, centerZ, radius)
 
 	for i = startX, endX do
 		for j = startZ, endZ do
-			local cx, cz = (i + 0.5) * METAL_MAP_SQUARE_SIZE, (j + 0.5) * METAL_MAP_SQUARE_SIZE
+			local cx, cz = (i + 0.5) * gridSize, (j + 0.5) * gridSize
 			local dx, dz = cx - centerX, cz - centerZ
 			local dist = sqrt(dx * dx + dz * dz)
 
@@ -440,7 +440,9 @@ function gadget:Initialize()
 	Spring.Log(gadget:GetInfo().name, LOG.INFO, "Mex Spot Finder Initialising")
 	local gameConfig = VFS.FileExists(GAMESIDE_METALMAP) and VFS.Include(GAMESIDE_METALMAP) or false
 	local mapConfig = VFS.FileExists(MAPSIDE_METALMAP) and VFS.Include(MAPSIDE_METALMAP) or false
-	
+	if not mapConfig then
+		mapConfig = VFS.FileExists(ALT_MAPSIDE_METALMAP) and VFS.Include(ALT_MAPSIDE_METALMAP) or false
+	end
 	local metalSpots, fromEngineMetalmap = GetSpots(gameConfig, mapConfig)
 	local metalSpotsByPos = false
 	

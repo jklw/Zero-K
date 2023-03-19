@@ -680,9 +680,10 @@ local moduleDefs = {
 		applicationFunction = function (modules, sharedData)
 			sharedData.areaCloak = true
 			sharedData.decloakDistance = 180
-			sharedData.cloakFieldRange = 350
+			sharedData.cloakFieldRange = 320
 			sharedData.cloakFieldUpkeep = 15
-			sharedData.radarJammingRange = 350
+			sharedData.cloakFieldRecloakRate = 800 -- UI only, update in unit_commander_upgrade
+			sharedData.radarJammingRange = 320
 		end
 	},
 	{

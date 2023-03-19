@@ -113,7 +113,10 @@ local shaderFragZMaxLoc = nil
 
 
 function widget:Shutdown()
-  glDeleteShader(shader)
+	if shader then
+		glDeleteShader(shader)
+		shader = nil
+	end
 end
 
 
@@ -147,7 +150,7 @@ function widget:Initialize()
         color = gl_Color.rgb;
               
         gl_Position = gl_ProjectionMatrix * P;
-        position = gl_Position;
+        position = gl_Position.xyz;
       }
     ]],
  
@@ -177,6 +180,7 @@ function widget:Initialize()
     Spring.Log(widget:GetInfo().name, LOG.ERROR, glGetShaderLog())
     spEcho("Xray shader compilation failed.")
     widgetHandler:RemoveWidget()
+    return
   end
 
   shaderFragZMinLoc = gl.GetUniformLocation(shader, "fragZMin")

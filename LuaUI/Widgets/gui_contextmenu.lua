@@ -503,8 +503,8 @@ local function weapons2Table(cells, ws, unitDef, unitID, unitCost)
 			stun_time = tonumber(cp.disarmtimer)
 		end
 
-		if cp.timeslow_damagefactor then
-			dams = val * cp.timeslow_damagefactor
+		if cp.timeslow_damagefactor or cp.timeslow_onlyslow then
+			dams = val * (cp.timeslow_damagefactor or 1)
 			if (cp.timeslow_onlyslow == "1") then
 				val = 0
 			end
@@ -693,6 +693,12 @@ local function weapons2Table(cells, ws, unitDef, unitID, unitCost)
 		if cp.post_capture_reload then
 			cells[#cells+1] = ' - Reloadtime:'
 			cells[#cells+1] = numformat (tonumber(cp.post_capture_reload)/30) .. 's'
+		elseif cp.reammoseconds then
+			cells[#cells+1] = ' - Must rearm after shot'
+			cells[#cells+1] = ''
+			cells[#cells+1] = ' - Rearm time:'
+			cells[#cells+1] = cp.reammoseconds .. 's'
+			show_dps = false
 		elseif show_reload then
 			cells[#cells+1] = ' - Reloadtime:'
 			cells[#cells+1] = numformat (reloadtime) .. 's'
@@ -729,9 +735,9 @@ local function weapons2Table(cells, ws, unitDef, unitID, unitCost)
 		end
 
 		local aoe = wd.impactOnly and 0 or wd.damageAreaOfEffect
-		if aoe > 15 and show_aoe then
+		if (aoe > 15 and show_aoe) or cp.stats_aoe then
 			cells[#cells+1] = ' - AoE radius:'
-			cells[#cells+1] = numformat(aoe) .. " elmo"
+			cells[#cells+1] = numformat(cp.stats_aoe or aoe) .. " elmo"
 		end
 
 		if show_projectile_speed then
@@ -815,6 +821,11 @@ local function weapons2Table(cells, ws, unitDef, unitID, unitCost)
 			if (cp.area_damage_is_impulse == "1") then
 				cells[#cells+1] = ' - Creates a gravity well:'
 				cells[#cells+1] = ''
+			elseif (cp.area_damage_is_slow == "1") then
+				cells[#cells+1] = ' - Lingering slow damage in an area:'
+				cells[#cells+1] = ''
+				cells[#cells+1] = '   * DPS:'
+				cells[#cells+1] = color2incolor(colorPurple) .. cp.area_damage_dps .. " (S)\008"
 			else
 				cells[#cells+1] = ' - Sets the ground on fire:'
 				cells[#cells+1] = ''
@@ -972,16 +983,22 @@ local function printAbilities(ud, unitID, unitCost)
 	if cp.area_cloak or (unitID and Spring.GetUnitRulesParam(unitID, "comm_area_cloak")) then
 		local areaCloakUpkeep = (unitID and Spring.GetUnitRulesParam(unitID, "comm_area_cloak_upkeep") or cp.area_cloak_upkeep)
 		local areaCloakRadius = ((unitID and Spring.GetUnitRulesParam(unitID, "comm_area_cloak_radius")) or cp.area_cloak_radius)
+		local areaCloakRecloak = ((unitID and Spring.GetUnitRulesParam(unitID, "comm_area_recloak_rate")) or cp.area_cloak_recloak_rate)
 		cells[#cells+1] = 'Area cloak'
 		cells[#cells+1] = ''
 		cells[#cells+1] = ' - Upkeep:'
 		cells[#cells+1] = areaCloakUpkeep .. " E/s"
 		cells[#cells+1] = ' - Radius:'
 		cells[#cells+1] = areaCloakRadius .. " elmo"
+		cells[#cells+1] = ' - Cloak rate:'
+		cells[#cells+1] = areaCloakRecloak .. " mass/s"
+		if cp.area_cloak_shift_range then
+			cells[#cells+1] = ' - Offset range:'
+			cells[#cells+1] = cp.area_cloak_shift_range
+		end
 		if cp.area_cloak_move_mult then
 			cells[#cells+1] = ' - Move speed:'
 			cells[#cells+1] = numformat(tonumber(cp.area_cloak_move_mult)*100) .. "%"
-		
 		end
 		cells[#cells+1] = ''
 		cells[#cells+1] = ''

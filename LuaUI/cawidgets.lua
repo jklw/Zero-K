@@ -40,6 +40,7 @@ vfsInclude("LuaRules/Utilities/gametype.lua"         , nil, vfsGame)
 vfsInclude("LuaRules/Utilities/vector.lua"           , nil, vfsGame)
 vfsInclude("LuaRules/Utilities/unitTypeChecker.lua"  , nil, vfsGame)
 vfsInclude("LuaRules/Utilities/function_override.lua", nil, vfsGame)
+vfsInclude("LuaRules/Utilities/minimap.lua"          , nil, vfsGame)
 vfsInclude("LuaUI/Utilities/truncate.lua"            , nil, vfsGame)
 vfsInclude("LuaUI/keysym.lua"                        , nil, vfsGame)
 vfsInclude("LuaUI/system.lua"                        , nil, vfsGame)
@@ -183,6 +184,7 @@ local flexCallIns = {
 	'DefaultCommand',
 	'UnitCreated',
 	'UnitFinished',
+	'UnitResurrected',
 	'UnitReverseBuilt',
 	'UnitFromFactory',
 	'UnitDestroyed',
@@ -2236,6 +2238,12 @@ function widgetHandler:UnitCreated(unitID, unitDefID, unitTeam, builderID)
 	end
 end
 
+-- NB: called via Lua at the moment, not engine
+function widgetHandler:UnitResurrected(unitID, unitDefID, unitTeam, builderID)
+	for _, w in r_ipairs(self.UnitResurrectedList) do
+		w:UnitResurrected(unitID, unitDefID, unitTeam, builderID)
+	end
+end
 
 function widgetHandler:UnitFinished(unitID, unitDefID, unitTeam)
 	for _, w in r_ipairs(self.UnitFinishedList) do

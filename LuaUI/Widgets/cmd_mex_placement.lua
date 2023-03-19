@@ -16,6 +16,7 @@ end
 
 VFS.Include("LuaRules/Configs/customcmds.h.lua")
 local _, _, GetAllyTeamOctant = VFS.Include("LuaUI/Headers/startbox_utilities.lua")
+local GetMiniMapFlipped = Spring.Utilities.IsMinimapFlipped
 include("keysym.lua")
 
 ------------------------------------------------------------
@@ -93,7 +94,7 @@ local myAllyTeam = spGetMyAllyTeamID()
 local mapX = Game.mapSizeX
 local mapZ = Game.mapSizeZ
 
-local METAL_MAP_SQUARE_SIZE = 16
+local METAL_MAP_SQUARE_SIZE = Game.metalMapSquareSize
 local MEX_RADIUS = Game.extractorRadius
 local MAP_SIZE_X = Game.mapSizeX
 local MAP_SIZE_X_SCALED = MAP_SIZE_X / METAL_MAP_SQUARE_SIZE
@@ -1344,8 +1345,15 @@ function widget:DrawInMiniMap(minimapX, minimapY)
 	end
 	if drawMexSpots or WG.showeco_always_mexes then
 		glPushMatrix()
-		glTranslate(0,minimapY,0)
-		glScale(minimapX/mapX, -minimapY/mapZ, 1)
+
+		if GetMiniMapFlipped() then
+			glTranslate(minimapY, 0, 0)
+			glScale(-minimapX/mapX, minimapY/mapZ, 1)
+		else
+			glTranslate(0, minimapY, 0)
+			glScale(minimapX/mapX, -minimapY/mapZ, 1)
+		end
+
 		glLighting(false)
 
 		glCallList(minimapDrawList)
