@@ -8,6 +8,7 @@ lw=(
     gui_contextmenu.lua
     cmd_hold_ctrl_to_place_and_morph.lua
     dbg_unit_stats_dumper.lua
+    snd_text_to_speech_ssml_file.lua
 )
 
 for x in $lw
