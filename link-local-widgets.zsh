@@ -9,6 +9,7 @@ lw=(
     cmd_hold_ctrl_to_place_and_morph.lua
     dbg_unit_stats_dumper.lua
     snd_text_to_speech_ssml_file.lua
+    gui_chili_nuke_warning.lua
 )
 
 for x in $lw
@@ -30,7 +31,6 @@ do
 done
 
 toTrash=(
-    gui_chili_nuke_warning.lua
     gui_chili_share.lua
     gui_keyboard_manager.lua
     gui_chili_integral_menu.lua

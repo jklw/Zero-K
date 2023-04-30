@@ -34,14 +34,16 @@ local flashTime = 0
 
 local FLASH_PERIOD = 0.4
 
+local opacity = 0.6
+
 local flashStateDefs = {
 	{
-		color = {1,0.2,0,1},
-		outlinecolor = {0.3,0.1,0,1},
+		color = {1,0.2,0,opacity},
+		outlinecolor = {0.3,0.1,0,opacity},
 	},
 	{
-		color = {0.9,0.6,0.1,1},
-		outlinecolor = {0.25,0.15,0,1},
+		color = {0.9,0.6,0.1,opacity},
+		outlinecolor = {0.25,0.15,0,opacity},
 	},
 }
 
@@ -66,10 +68,13 @@ end
 local function CreateWindow()
 	local data = {}
 	
-	local screenWidth = Spring.GetViewGeometry()
+	local screenWidth, screenHeight = Spring.GetViewGeometry()
 	local screenHorizCentre = screenWidth / 2
-	local windowWidth = 500
 	local resourcePanelHeight = 100
+	-- local windowWidth = 500
+	local windowWidth = screenWidth - 10
+	-- local windowHeight = 50
+	local windowHeight = screenHeight - 2*resourcePanelHeight
 
 	data.window = Chili.Window:New{
 		parent = screen0,
@@ -80,7 +85,7 @@ local function CreateWindow()
 		x = screenHorizCentre - windowWidth/2,
 		y = resourcePanelHeight,
 		clientWidth  = windowWidth,
-		clientHeight = 50,
+		clientHeight = windowHeight,
 		dockable = false,
 		draggable = false,
 		resizable = false,
@@ -100,7 +105,8 @@ local function CreateWindow()
 		align  = "center",
 		autosize = false,
 		font   = {
-			size = 32,
+			-- size = 32,
+			size = 200,
 			outline = true,
 			outlineWidth = 6,
 			outlineWeight = 6,
