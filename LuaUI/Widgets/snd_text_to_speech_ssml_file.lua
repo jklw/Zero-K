@@ -24,11 +24,14 @@ local voices = {
     "cmu_slt-glow_tts",
     "harvard-glow_tts",
     "mary_ann-glow_tts",
+    "southern_english_female",
 }
 
+-- cf. ../chat_preprocess.lua:37
 local spokenMsgTypes = {
     player_to_allies = true,
     player_to_player_received = true,
+    player_to_player_sent = true,
     player_to_specs = true,
     spec_to_specs = true,
     spec_to_allies = true,
@@ -44,7 +47,7 @@ function widget:Initialize()
 
     local fileName = "text_to_speech.ssml"
 	outfile = io.open(fileName, "w")
-    
+
     -- file:write(table.concat(header, ';'))
 end
 
@@ -75,18 +78,44 @@ local function EscapeXmlText(text)
     return text:gsub("[<&]", xmlTextEscapes)
 end
 
--- Add a period to the end of the text if it doesn't already end with a punctuation character.
-function AddPeriod(text)
-    if text:find("%p%s*$") then return text else return text.."." end
+local function WordPat(word)
+    return "%f[%w_]" .. word .. "%f[^%w_]"
 end
 
-local function CreateVoiceElement(playerId, innerSsml) 
+function TransformMessage(playerId, msg)
+    msg = EscapeXmlText(msg)
+
+    local match = msg:match("^I choose: (.*)!")
+    if match then
+        local playerName = playerId and Spring.GetPlayerInfo(playerId, false)
+        return string.format("%s chooses %s.", playerName or "An unknown player", match)
+    end
+
+    -- Fix mispronunciation of "nice" as "nees"
+    msg = msg:gsub(WordPat("nice"), "nighs")
+
+    msg = msg:gsub(WordPat("aa"), "AA")
+    msg = msg:gsub(WordPat("gg"), "GG")
+    msg = msg:gsub(WordPat("ty"), "thank you")
+    msg = msg:gsub(WordPat("thx"), "thanks")
+    msg = msg:gsub(WordPat("plz"), "please")
+
+    -- Add a period to the end of the text if it doesn't already end with a punctuation character.
+    if msg:find("%p%s*$") then return msg else return msg.."." end
+end
+
+local function CreateVoiceElement(playerId, innerSsml)
     local voiceIx = playerIdToVoiceIndex[playerId]
     if not voiceIx then
         voiceIx = GetVoiceIndex(playerId)
         playerIdToVoiceIndex[playerId] = voiceIx
     end
     return string.format('<voice name="%s">%s</voice>\n', voices[voiceIx], innerSsml)
+end
+
+local function Emit(playerId, msg)
+	outfile:write(CreateVoiceElement(playerId, TransformMessage(playerId, msg)))
+	outfile:flush()
 end
 
 function widget:AddConsoleMessage(msg)
@@ -96,13 +125,18 @@ function widget:AddConsoleMessage(msg)
 		return
 	end
 
-    local playerId = msg.player and msg.player.id or nil
-
     -- if playerId == myPlayerID then return end
 
-	outfile:write(CreateVoiceElement(playerId, EscapeXmlText(AddPeriod(msg.argument))))
-	-- outfile:write(CreateVoiceElement(playerId, (msg.playername or "unknown") .. ": " ..(msg.argument or "") .. "."))
-	outfile:flush()
+    local msga = msg.argument
+
+    if  msga:find("^%s*I gave %d+ metal to") or
+        msga:find("^%s*I gave %d+ energy to") then
+        return
+    end
+
+    local playerId = msg.player and msg.player.id or nil
+
+    Emit(playerId, msga)
 end
 
 function widget:MapDrawCmd(playerId, cmdType, px, py, pz, caption)
@@ -110,10 +144,11 @@ function widget:MapDrawCmd(playerId, cmdType, px, py, pz, caption)
 
 	--if (playerId == myPlayerID) then return end
 
-	if cmdType == 'point' and caption and caption ~= '' then
-        local playerName = Spring.GetPlayerInfo(playerId, false)
-        outfile:write(CreateVoiceElement(playerId, EscapeXmlText(AddPeriod(caption))))
-        -- outfile:write(CreateVoiceElement(playerId, (playerName or "unknown") .. ": " .. caption .. "."))
-        outfile:flush()
+	if cmdType == 'point' and caption and caption ~= ''
+        and (not caption:find("^%d+ units received from"))
+        and (not caption:find("^Unit received from"))
+        then
+        -- local playerName = Spring.GetPlayerInfo(playerId, false)
+        Emit(playerId, caption)
 	end
 end
