@@ -68,7 +68,6 @@ local title_text = confdata.title
 local title_image = confdata.title_image
 local subMenuIcons = confdata.subMenuIcons
 local useUiKeys = false
-local lastSaveGameFrame, totalSaveGameFrame
 
 --file_return = nil
 
@@ -209,12 +208,13 @@ local keybounditems = {}
 local keybind_date = 0
 
 local EPIC_SETTINGS_VERSION = 51
+local MUSIC_VOLUME_DEFAULT = 0.25
 
 local settings = {
 	versionmin = EPIC_SETTINGS_VERSION,
 	widgets = {},
 	show_crudemenu = true,
-	music_volume = 0.5,
+	music_volume = MUSIC_VOLUME_DEFAULT,
 	showAdvanced = false, -- Enable to show all settings.
 	simpleSettingsMode = true,
 }
@@ -729,12 +729,14 @@ local function MakeFlags()
 		local langData = languages[i]
 		flagChildren[#flagChildren + 1] = Image:New{
 			file = ":cn:".. LUAUI_DIRNAME .. "Images/flags/".. langData.flag ..'.png',
+			lang = langData.lang,
+			OnClick = {SetLang }
 		}
 		flagChildren[#flagChildren + 1] = Button:New{
 			caption = langData.name,
 			objectOverrideFont = WG.GetFont(),
 			name = 'countryButton' .. langData.lang;
-			width = '50%',
+			width = '100%',
 			lang = langData.lang,
 			OnClick = {SetLang }
 		}
@@ -2381,7 +2383,7 @@ local function GetMainPanel(parent, width, height)
 					max = 1,
 					step = 0.01,
 					trackColor = color.main_fg,
-					value = settings.config["epic_Settings/Audio_Music_Volume"] or 0.5,
+					value = settings.config["epic_Settings/Audio_Music_Volume"] or MUSIC_VOLUME_DEFAULT,
 					OnChange = {
 						function(self)
 							if WG.crude and WG.crude.SetMusicVolume then
@@ -2499,7 +2501,7 @@ local function GetMainPanel(parent, width, height)
 					max = 1,
 					step = 0.01,
 					trackColor = color.main_fg,
-					value = settings.config["epic_Settings/Audio_Music_Volume"] or 0.5,
+					value = settings.config["epic_Settings/Audio_Music_Volume"] or MUSIC_VOLUME_DEFAULT,
 					OnChange = {
 						function(self)
 							if WG.crude and WG.crude.SetMusicVolume then
@@ -3258,7 +3260,7 @@ function widget:SetConfigData(data)
 		settings.music_volume = nil
 	end
 
-	WG.crude.SetMusicVolume(settings.config["epic_Settings/Audio_Music_Volume"] or 0.5)
+	WG.crude.SetMusicVolume(settings.config["epic_Settings/Audio_Music_Volume"] or MUSIC_VOLUME_DEFAULT)
 	LoadKeybinds()
 end
 
@@ -3306,15 +3308,8 @@ function widget:GameFrame(n)
 			lbl_gtime:SetCaption(GetTimeString((gameOverFrame)/30))
 			widgetHandler:RemoveWidgetCallIn("GameFrame", self)
 		end
-		if not lastSaveGameFrame then
-			lastSaveGameFrame = Spring.GetGameRulesParam("lastSaveGameFrame") or 0
-		end
-		if not totalSaveGameFrame then
-			totalSaveGameFrame = Spring.GetGameRulesParam("totalSaveGameFrame") or 0
-		end
-		
-		if (n + totalSaveGameFrame)%30 == 0 then
-			lbl_gtime:SetCaption(GetTimeString((n + totalSaveGameFrame)/30))
+		if n%30 == 0 then
+			lbl_gtime:SetCaption(GetTimeString(n/30))
 		end
 	end
 end

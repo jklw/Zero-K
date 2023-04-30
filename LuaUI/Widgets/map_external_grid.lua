@@ -143,11 +143,19 @@ local terrainFuncs = {
 	mesa = function(x, z, args) end,
 }
 ]]--
+
+local offset = (Spring.GetGameRulesParam("waterlevel") or 0)
 local function GetGroundHeight(x, z)
-	return heights[x] and heights[x][z] or spGetGroundHeight(x,z)
+	return (heights[x] and heights[x][z] or spGetGroundHeight(x,z)) - offset
 end
 
 local function IsIsland()
+	if WG.GetIslandOverride then
+		local override, value = WG.GetIslandOverride()
+		if override then
+			return value
+		end
+	end
 	local sampleDist = 512
 	for i=1,mapSizeX,sampleDist do
 		-- top edge

@@ -21,6 +21,7 @@ return { raveparty = {
     draw_blueprint_facing = 1,
     want_proximity_targetting = 1,
     speed_bar = 1,
+    superweapon = 1,
 
     keeptooltip    = [[any string I want]],
     neededlink     = 400,
@@ -34,7 +35,7 @@ return { raveparty = {
   iconType                      = [[mahlazer]],
   levelGround                   = false,
   losEmitHeight                 = 100,
-  maxDamage                     = 16000,
+  maxDamage                     = 12000,
   maxSlope                      = 18,
   maxVelocity                   = 0,
   maxWaterDepth                 = 0,

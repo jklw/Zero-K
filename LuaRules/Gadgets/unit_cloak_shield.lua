@@ -390,13 +390,16 @@ local function UpdateCloakees(data, frameNum)
 					-- cloakees[cloakee] = 1 means that the gadget that allows cloak won't actually let the unit cloak
 					-- This is so it counts as "attempting to cloak" for the purpose of drawing the cloak range ring,
 					-- and so it gets all the required engine and LUS decloak events (eg on firing)
-					cloakees[cloakee] = 1
+					cloakees[cloakee] = 0
 				else
 					-- "check cloakees" actually nulls the table, so need to constantly affirm that our already-cloaked units are cloaked
-					cloakees[cloakee] = 2
+					cloakees[cloakee] = 1
 				end
 			else
 				cloakProgress[cloakee] = 0
+				-- Set the cloakee to being handled, otherwise it won't be set to not cloak if it was not allowed to
+				-- cloak when it left the cloaker.
+				cloakees[cloakee] = 0
 			end
 			if (cloakee ~= unitID) then
 				--other units
@@ -419,7 +422,7 @@ local function UpdateCloakees(data, frameNum)
 						SetUnitCloakAndParam(cloakeeLvl2, 4, radiusOverrideDefs[udid2])
 						-- note: this gives perfect cloaking, but is the only level
 						-- to work under paralysis
-						cloakees[cloakeeLvl2] = 2
+						cloakees[cloakeeLvl2] = 1
 					end
 				end
 			end
@@ -433,7 +436,7 @@ local function UpdateCloakees(data, frameNum)
 				local udid = GetUnitDefID(cloakee)
 				if (GetUnitAllyTeam(cloakee) == allyTeam) then
 					SetUnitCloakAndParam(cloakee, level, radiusOverrideDefs[udid])
-					cloakees[cloakee] = 2
+					cloakees[cloakee] = 1
 				end
 			end
 		end
@@ -470,7 +473,7 @@ local function UpdateCloakees(data, frameNum)
 end
 
 function GG.AreaCloakFinishedCharging(unitID)
-	return cloakees[unitID] and (cloakees[unitID] >= 2)
+	return cloakees[unitID] and (cloakees[unitID] == 1)
 end
 
 local function UpdateMoveSpeedMult(unitID, data, enabled)
@@ -565,38 +568,6 @@ function gadget:GameFrame(frameNum)
 		end
 	end
 end
-
-function gadget:Load(zip)
-	-- restore cloak shield for dyncomms
-	for _,unitID in ipairs(Spring.GetAllUnits()) do
-	if not cloakShieldUnits[unitID] then
-		local unitDefID = Spring.GetUnitDefID(unitID)
-		local cloakShieldDef = GG.Upgrades_UnitCloakShieldDef(unitID)
-		if cloakShieldDef then
-		local state = GetUnitRulesParam(unitID, "cloak_shield")
-		local radius = Spring.GetUnitRulesParam(unitID, "cloakerRadius")
-		local isOn = state ~= nil and state > 0
-		
-		AddCloakShieldUnit(unitID, cloakShieldDef)
-		CloakShieldCommand(unitID, {isOn and 1 or 0})
-		Spring.SetUnitRulesParam(unitID, "cloakerRadius", radius)
-		end
-	end
-	end
-	
-	for unitID, data in pairs(cloakers) do
-		local radius = Spring.GetUnitRulesParam(unitID, "cloakerRadius") or 0
-		if radius > 0 then
-			data.radius = radius
-			if (data.draw) then
-				SendToUnsynced(SYNCSTR, data.id, radius)
-			end
-			UpdateCloakees(data, Spring.GetGameFrame())
-		end
-	end
-end
-
---------------------------------------------------------------------------------
 
 function CloakShieldCommand(unitID, cmdParams)
 	if (type(cmdParams[1]) ~= 'number') then

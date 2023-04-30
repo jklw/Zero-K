@@ -22,6 +22,7 @@ return { zenith = {
     --pylonrange  = 150,
     modelradius    = [[45]],
     bait_level_default = 0,
+    superweapon = 1,
 
     neededlink     = 400,
     pylonrange     = 150,
@@ -33,7 +34,7 @@ return { zenith = {
   footprintX                    = 8,
   footprintZ                    = 8,
   iconType                      = [[mahlazer]],
-  maxDamage                     = 12000,
+  maxDamage                     = 9000,
   maxSlope                      = 18,
   maxVelocity                   = 0,
   maxWaterDepth                 = 0,
@@ -241,7 +242,6 @@ return { zenith = {
 
       customParams              = {
         light_radius = 0,
-        do_not_save = 1, -- Controlled meteors are regenerated on load.
 
         spawns_name = "asteroid_dead",
         spawns_feature = 1,
@@ -304,7 +304,6 @@ return { zenith = {
       customParams              = {
         light_color = [[2.4 1.5 0.6]],
         light_radius = 600,
-        do_not_save = 1, -- Controlled meteors are regenerated on load.
 
         spawns_name = "asteroid_dead",
         spawns_feature = 1,

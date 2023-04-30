@@ -30,7 +30,7 @@
 --
 
 local options = {
--- do deployment and tactics even work?
+  -- do deployment and tactics even work?
   {
     key    = 'a_important',
     name   = 'Important',
@@ -205,6 +205,14 @@ local options = {
     key         = "allyreclaim",
     name        = "Reclaimable allies",
     desc        = "Allows reclaiming allied units and structures",
+    type        = "bool",
+    section     = "experimental",
+    def         = false,
+  },
+  {
+    key         = "reveal_superweapons",
+    name        = "Reveal superweapons",
+    desc        = "Reveals superweapons as soon as they exceed 5% completion.",
     type        = "bool",
     section     = "experimental",
     def         = false,

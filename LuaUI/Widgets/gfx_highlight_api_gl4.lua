@@ -22,6 +22,7 @@ local uniqueID = 0
 local highlightunitShaderConfig = {
 	ANIMSPEED = 0.066,
 	ANIMFREQUENCY = 0.033,
+	SKINSUPPORT = Spring.Utilities.IsCurrentVersionNewerThan(105, 1653) and 1 or 0,
 }
 
 local vsSrc =
@@ -30,12 +31,19 @@ local vsSrc =
 #extension GL_ARB_shader_storage_buffer_object : require
 #extension GL_ARB_shading_language_420pack: require
 #line 10000
+//__DEFINES__
+
 layout (location = 0) in vec3 pos; // 0-4 is per vertex
 layout (location = 1) in vec3 normal;
 layout (location = 2) in vec3 T;
 layout (location = 3) in vec3 B;
 layout (location = 4) in vec4 uv;
-layout (location = 5) in uint pieceIndex;
+#if (SKINSUPPORT == 0)
+	layout (location = 5) in uint pieceIndex;
+#else
+	layout (location = 5) in uvec2 bonesInfo; //boneIDs, boneWeights
+	#define pieceIndex (bonesInfo.x & 0x000000FFu)
+#endif
 
 layout (location = 6) in vec4 worldposrot; // this per instance parameters
 layout (location = 7) in vec4 parameters; // x =isstatic, y = edgealpha, z = edgeexponent, w = animamount
@@ -43,7 +51,6 @@ layout (location = 8) in vec4 hcolor; // rgb color, plainalpha
 layout (location = 9) in uvec4 instData;
 
 //__ENGINEUNIFORMBUFFERDEFS__
-//__DEFINES__
 #line 15000
 layout(std140, binding=0) readonly buffer MatrixBuffer {
 	mat4 mat[];

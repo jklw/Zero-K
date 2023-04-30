@@ -24,6 +24,7 @@ return { mahlazer = {
     bait_level_default = 0,
     want_precise_proximity_targetting = 1,
     draw_blueprint_facing = 1,
+    superweapon = 1,
 
     keeptooltip    = [[any string I want]],
     neededlink     = 600,
@@ -38,7 +39,7 @@ return { mahlazer = {
   footprintX                    = 10,
   footprintZ                    = 10,
   iconType                      = [[mahlazer]],
-  maxDamage                     = 10000,
+  maxDamage                     = 7500,
   maxSlope                      = 18,
   maxVelocity                   = 0,
   maxWaterDepth                 = 0,

@@ -223,10 +223,6 @@ local callInLists = {
 	"GameSetup",
 	"DefaultCommand",
 
-	-- Save/Load
-	"Save",
-	"Load",
-
 	-- FIXME: NOT IN BASE
 	"UnitCommand",
 	"UnitEnteredWater",
@@ -384,7 +380,7 @@ function gadgetHandler:LoadGadget(filename)
     Spring.Log(HANDLER_BASENAME, LOG.ERROR, 'Failed to load: ' .. basename .. '  (' .. err .. ')')
     return nil
   end
-  if (err == false) then
+  if (err == false) then -- note that all "normal" gadgets return `nil` implicitly at EOF, so don't do "if not err"
     return nil -- gadget asked for a quiet death
   end
 
@@ -1493,7 +1489,7 @@ end
 
 function gadgetHandler:UnitPreDamaged(unitID, unitDefID, unitTeam,
                                    damage, paralyzer, weaponDefID,
-								   projectileID, attackerID, attackerDefID, attackerTeam)
+                                   projectileID, attackerID, attackerDefID, attackerTeam)
 
 	if UnitPreDamaged_first then
 		for _,g in r_ipairs(self.UnitPreDamagedList) do
@@ -2045,24 +2041,6 @@ function gadgetHandler:UnsyncedHeightMapUpdate(x1, z1, x2, z2)
   end
   return
 end
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
-
-function gadgetHandler:Save(zip)
-  for _,g in r_ipairs(self.SaveList) do
-    g:Save(zip)
-  end
-  return
-end
-
-
-function gadgetHandler:Load(zip)
-  for _,g in r_ipairs(self.LoadList) do
-    g:Load(zip)
-  end
-  return
-end
-
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------

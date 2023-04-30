@@ -438,7 +438,17 @@ local pathReclaimHighlight = "Settings/Interface/Reclaim Highlight"
 
 local pathGesture = 'Settings/Interface/Gesture Menu'
 	ShButton(pathGesture, 'Toggle gesture menu', function() spSendCommands{"luaui togglewidget Chili Gesture Menu"} end, "Enable/disable gesture build menu.")
-  
+
+local pathToolbox = 'Settings/Toolbox'
+	ShButton(pathToolbox, 'Toggle Start Zone Editor', function() spSendCommands{"luaui togglewidget Startbox Editor"} end, [[Map creation gui for drawing polygons and writing their coordinates to infolog.txt.
+  - Left click to place a vertex.
+  - Right click to place a vertex then finish the polygon (start zones can have multiple polygons).
+  - Press N finish the current polygon.
+  - Press U to undo the last placed vertex
+  - Press S to print the current boxes to infolog.txt.
+  - Press D to delete the most recently placed box.
+  - Hold Ctrl to snap to cardinal directions.]])
+
 --- MISC --- Ungrouped. If some of the settings here can be grouped together, make a new subsection or its own section.
 local pathMisc = 'Settings/Misc'
 	--ShButton( 'Exit Game...', "exitwindow", '', false ) --this breaks the exitwindow, fixme
@@ -705,7 +715,7 @@ local pathAudio = 'Settings/Audio'
 	})
 	AddOption(pathAudio,{
 		name = 'UI Volume',
-		desc = 'Interface notifications such as chat.',
+		desc = 'Interface notifications such as chat. Also applies to unit replies.',
 		type = 'number',
 		min = 0,
 		max = 100,
@@ -718,10 +728,11 @@ local pathAudio = 'Settings/Audio'
 		name = 'Unit Reply Volume',
 		desc = 'Noises that units make when being selected or given orders.',
 		type = 'number',
+		key = "unit_reply_volume",
+		value = 50,
 		min = 0,
 		max = 100,
-		springsetting = 'snd_volunitreply',
-		OnChange = function(self) spSendCommands{"set snd_volunitreply " .. self.value} end,
+		OnChange = function(self) WG.unitReplyVolumeMult =  self.value / 50 end, -- pay attention, the scaled value is 0-2!
 		simpleMode = true,
 		everyMode = true,
 	})

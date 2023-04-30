@@ -2123,6 +2123,7 @@ end
 --------------------------------------------------------------------------------
 
 function GG.Terraform_RaiseWater(raiseAmount)
+	Spring.SetGameRulesParam("waterlevel", (Spring.GetGameRulesParam("waterlevel") or 0) + raiseAmount)
 	
 	for i = 1, structureCount do
 		local s = structure[structureTable[i]]
@@ -3938,18 +3939,6 @@ function gadget:Initialize()
 		local unitDefID = Spring.GetUnitDefID(unitID)
 		local teamID = spGetUnitTeam(unitID)
 		gadget:UnitCreated(unitID, unitDefID, teamID)
-	end
-end
-
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
--- Save/Load
-
-function gadget:Load(zip)
-	for _, unitID in ipairs(Spring.GetAllUnits()) do
-		if Spring.GetUnitDefID(unitID) == terraunitDefID then
-			spDestroyUnit(unitID)
-		end
 	end
 end
 
